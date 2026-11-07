@@ -3,8 +3,9 @@
 namespace App\Filament\Resources\Users\Pages;
 
 use App\Filament\Resources\Users\UserResource;
+use App\Services\InvitationLink;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 
 class CreateUser extends CreateRecord
@@ -28,6 +29,13 @@ class CreateUser extends CreateRecord
     {
         $this->getRecord()->syncRoles([$this->role]);
 
-        Password::sendResetLink(['email' => $this->getRecord()->email]);
+        $link = app(InvitationLink::class)->for($this->getRecord());
+
+        Notification::make()
+            ->title('تم إنشاء المستخدم')
+            ->body('أرسل هذا الرابط للمستخدم ليختار كلمة المرور. ينتهي خلال 48 ساعة:'."\n".$link)
+            ->success()
+            ->persistent()
+            ->send();
     }
 }

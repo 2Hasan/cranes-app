@@ -6,19 +6,20 @@ use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Models\User;
+use App\Services\InvitationLink;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Password;
 
 class UserResource extends Resource
 {
@@ -87,11 +88,19 @@ class UserResource extends Resource
                     ->boolean(),
             ])
             ->recordActions([
-                Action::make('resendInvite')
-                    ->label('إعادة إرسال الدعوة')
-                    ->icon('heroicon-o-envelope')
-                    ->action(fn (User $record): mixed => Password::sendResetLink(['email' => $record->email]))
-                    ->successNotificationTitle('تم إرسال رابط الدعوة'),
+                Action::make('newInviteLink')
+                    ->label('رابط دعوة جديد')
+                    ->icon('heroicon-o-link')
+                    ->action(function (User $record): void {
+                        $link = app(InvitationLink::class)->for($record);
+
+                        Notification::make()
+                            ->title('رابط الدعوة')
+                            ->body('أرسل هذا الرابط للمستخدم. ينتهي خلال 48 ساعة:'."\n".$link)
+                            ->success()
+                            ->persistent()
+                            ->send();
+                    }),
                 EditAction::make(),
             ]);
     }

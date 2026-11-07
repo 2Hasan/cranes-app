@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Notifications\AccountInvitation;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -45,13 +44,5 @@ class User extends Authenticatable implements FilamentUser
     public function canAccessPanel(Panel $panel): bool
     {
         return $this->is_active;
-    }
-
-    /**
-     * Sends the invitation/password-setup email instead of the default reset email.
-     */
-    public function sendPasswordResetNotification($token): void
-    {
-        $this->notify(new AccountInvitation($token));
     }
 }
