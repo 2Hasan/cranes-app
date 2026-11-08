@@ -4,9 +4,8 @@ use App\Http\Controllers\CraneReportController;
 use App\Http\Controllers\PushSubscriptionController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// The app is internal: visitors go to the login page, signed-in users to the dashboard.
+Route::get('/', fn () => redirect('/admin'));
 
 // Guests are sent to the Filament login page instead of the default /login route.
 Route::get('/login', fn () => redirect('/admin/login'))->name('login');
