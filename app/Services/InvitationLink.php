@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Password;
 
 class InvitationLink
@@ -15,9 +16,14 @@ class InvitationLink
     {
         $token = Password::broker()->createToken($user);
 
-        return route('filament.admin.auth.password-reset.reset', [
-            'token' => $token,
-            'email' => $user->email,
-        ]);
+        return Filament::getPanel('admin')->getResetPasswordUrl($token, $user);
+    }
+
+    /**
+     * Browser script that copies the link to the clipboard.
+     */
+    public function copyScript(string $link): string
+    {
+        return 'navigator.clipboard.writeText('.json_encode($link).');';
     }
 }

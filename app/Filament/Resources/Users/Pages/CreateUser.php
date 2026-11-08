@@ -29,10 +29,13 @@ class CreateUser extends CreateRecord
     {
         $this->getRecord()->syncRoles([$this->role]);
 
-        $link = app(InvitationLink::class)->for($this->getRecord());
+        $invitation = app(InvitationLink::class);
+        $link = $invitation->for($this->getRecord());
+
+        $this->js($invitation->copyScript($link));
 
         Notification::make()
-            ->title('تم إنشاء المستخدم')
+            ->title('تم إنشاء المستخدم (رابط الدعوة منسوخ)')
             ->body('أرسل هذا الرابط للمستخدم ليختار كلمة المرور. ينتهي خلال 48 ساعة:'."\n".$link)
             ->success()
             ->persistent()

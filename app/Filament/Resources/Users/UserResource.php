@@ -91,11 +91,14 @@ class UserResource extends Resource
                 Action::make('newInviteLink')
                     ->label('رابط دعوة جديد')
                     ->icon('heroicon-o-link')
-                    ->action(function (User $record): void {
-                        $link = app(InvitationLink::class)->for($record);
+                    ->action(function (User $record, $livewire): void {
+                        $invitation = app(InvitationLink::class);
+                        $link = $invitation->for($record);
+
+                        $livewire->js($invitation->copyScript($link));
 
                         Notification::make()
-                            ->title('رابط الدعوة')
+                            ->title('رابط الدعوة (تم نسخه)')
                             ->body('أرسل هذا الرابط للمستخدم. ينتهي خلال 48 ساعة:'."\n".$link)
                             ->success()
                             ->persistent()
