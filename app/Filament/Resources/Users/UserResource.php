@@ -76,13 +76,15 @@ class UserResource extends Resource
                     ->searchable(),
                 TextColumn::make('email')
                     ->label('البريد')
-                    ->searchable(),
+                    ->searchable()
+                    ->visibleFrom('md'),
                 TextColumn::make('roles.name')
                     ->label('الدور')
                     ->formatStateUsing(fn (string $state): string => self::ROLE_LABELS[$state] ?? $state)
                     ->badge(),
                 TextColumn::make('site.name')
-                    ->label('الموقع'),
+                    ->label('الموقع')
+                    ->visibleFrom('md'),
                 IconColumn::make('is_active')
                     ->label('فعّال')
                     ->boolean(),

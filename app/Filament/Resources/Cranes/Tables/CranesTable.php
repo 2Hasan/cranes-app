@@ -19,6 +19,8 @@ class CranesTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->striped()
+            ->paginationPageOptions([10, 25, 50])
             ->columns([
                 TextColumn::make('code')
                     ->label('رقم')
@@ -26,20 +28,24 @@ class CranesTable
                     ->searchable(),
                 TextColumn::make('name')
                     ->label('الاسم')
-                    ->searchable(),
+                    ->searchable()
+                    ->visibleFrom('md'),
                 TextColumn::make('type')
                     ->label('النوع')
-                    ->searchable(),
+                    ->searchable()
+                    ->visibleFrom('lg'),
                 TextColumn::make('site.name')
                     ->label('الموقع')
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('md'),
                 TextColumn::make('status')
                     ->label('الحالة')
                     ->badge(),
                 TextColumn::make('current_km')
                     ->label('العداد (كم)')
                     ->numeric()
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('md'),
                 TextColumn::make('service_due')
                     ->label('الصيانة')
                     ->state(fn (Crane $record): string => self::dueLabel($record))
