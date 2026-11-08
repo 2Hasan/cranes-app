@@ -20,7 +20,7 @@ class MaintenanceRecord extends Model
     /** @var list<string> */
     protected $fillable = [
         'crane_id',
-        'technician_id',
+        'technician_name',
         'created_by',
         'type',
         'performed_on',
@@ -42,12 +42,6 @@ class MaintenanceRecord extends Model
     public function crane(): BelongsTo
     {
         return $this->belongsTo(Crane::class);
-    }
-
-    /** @return BelongsTo<User, $this> */
-    public function technician(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'technician_id');
     }
 
     /** @return BelongsTo<User, $this> */

@@ -20,7 +20,7 @@ class MaintenanceRecordFactory extends Factory
     {
         return [
             'crane_id' => Crane::factory(),
-            'technician_id' => User::factory(),
+            'technician_name' => fake()->name(),
             'created_by' => User::factory(),
             'type' => MaintenanceType::Periodic,
             'performed_on' => now()->subDays(10)->toDateString(),

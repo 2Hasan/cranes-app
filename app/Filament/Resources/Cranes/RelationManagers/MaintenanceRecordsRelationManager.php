@@ -4,7 +4,6 @@ namespace App\Filament\Resources\Cranes\RelationManagers;
 
 use App\Enums\MaintenanceType;
 use App\Models\MaintenanceRecord;
-use App\Models\User;
 use App\Services\KmRecorder;
 use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
@@ -39,11 +38,9 @@ class MaintenanceRecordsRelationManager extends RelationManager
                 ->numeric()
                 ->minValue(0)
                 ->default(fn (): int => $this->getOwnerRecord()->current_km),
-            Select::make('technician_id')
+            TextInput::make('technician_name')
                 ->label('الفني')
-                ->options(fn (): array => User::role('technician')->pluck('name', 'id')->all())
-                ->searchable()
-                ->required(),
+                ->maxLength(120),
             Textarea::make('description')
                 ->label('ما الذي تم')
                 ->required()
@@ -62,8 +59,9 @@ class MaintenanceRecordsRelationManager extends RelationManager
                     ->label('التاريخ')
                     ->date()
                     ->sortable(),
-                TextColumn::make('technician.name')
-                    ->label('الفني'),
+                TextColumn::make('technician_name')
+                    ->label('الفني')
+                    ->placeholder('—'),
                 TextColumn::make('km')
                     ->label('العداد (كم)')
                     ->numeric(),

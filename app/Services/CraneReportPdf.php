@@ -19,7 +19,7 @@ class CraneReportPdf
         $crane->load([
             'site',
             'maintenanceRecords' => fn ($query) => $query
-                ->with(['technician', 'creator'])
+                ->with(['creator'])
                 ->orderByDesc('performed_on')
                 ->orderByDesc('id'),
             'faults' => fn ($query) => $query

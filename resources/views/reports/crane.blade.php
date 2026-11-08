@@ -129,7 +129,7 @@
                     <tr>
                         <td>{{ $record->type->getLabel() }}</td>
                         <td>{{ $record->performed_on->format('Y-m-d') }}</td>
-                        <td>{{ $record->technician?->name ?? '—' }}</td>
+                        <td>{{ $record->technician_name ?: '—' }}</td>
                         <td>{{ $record->km !== null ? number_format($record->km) : '—' }}</td>
                         <td>{{ $record->description }}</td>
                     </tr>
