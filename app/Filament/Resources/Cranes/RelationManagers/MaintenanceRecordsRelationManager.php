@@ -61,10 +61,12 @@ class MaintenanceRecordsRelationManager extends RelationManager
                     ->sortable(),
                 TextColumn::make('technician_name')
                     ->label('الفني')
-                    ->placeholder('—'),
+                    ->placeholder('—')
+                    ->visibleFrom('md'),
                 TextColumn::make('km')
                     ->label('العداد (كم)')
-                    ->numeric(),
+                    ->numeric()
+                    ->visibleFrom('md'),
                 TextColumn::make('description')
                     ->label('التفاصيل')
                     ->limit(60)

@@ -93,6 +93,7 @@ class UserResource extends Resource
                 Action::make('newInviteLink')
                     ->label('رابط دعوة جديد')
                     ->icon('heroicon-o-link')
+                    ->iconButton()
                     ->action(function (User $record, $livewire): void {
                         $invitation = app(InvitationLink::class);
                         $link = $invitation->for($record);
@@ -106,7 +107,7 @@ class UserResource extends Resource
                             ->persistent()
                             ->send();
                     }),
-                EditAction::make(),
+                EditAction::make()->iconButton(),
             ]);
     }
 

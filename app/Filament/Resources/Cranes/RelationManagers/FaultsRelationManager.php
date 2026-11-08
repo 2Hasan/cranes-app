@@ -63,9 +63,11 @@ class FaultsRelationManager extends RelationManager
                 TextColumn::make('reported_at')
                     ->label('تاريخ البلاغ')
                     ->dateTime()
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('md'),
                 TextColumn::make('assignee.name')
-                    ->label('المسؤول'),
+                    ->label('المسؤول')
+                    ->visibleFrom('md'),
             ])
             ->defaultSort('reported_at', 'desc')
             ->headerActions([

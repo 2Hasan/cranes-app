@@ -10,6 +10,8 @@ use App\Services\ServiceSchedule;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
+use Filament\Tables\Columns\Layout\Split;
+use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -19,33 +21,33 @@ class CranesTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->striped()
-            ->paginationPageOptions([10, 25, 50])
+            ->contentGrid(['md' => 2, 'xl' => 3])
+            ->paginationPageOptions([12, 24, 48])
             ->columns([
-                TextColumn::make('code')
-                    ->label('رقم')
-                    ->weight('bold')
-                    ->searchable(),
-                TextColumn::make('name')
-                    ->label('الاسم')
-                    ->searchable()
-                    ->visibleFrom('md'),
-                TextColumn::make('type')
-                    ->label('النوع')
-                    ->searchable()
-                    ->visibleFrom('lg'),
-                TextColumn::make('site.name')
-                    ->label('الموقع')
-                    ->sortable()
-                    ->visibleFrom('md'),
-                TextColumn::make('status')
-                    ->label('الحالة')
-                    ->badge(),
-                TextColumn::make('current_km')
-                    ->label('العداد (كم)')
-                    ->numeric()
-                    ->sortable()
-                    ->visibleFrom('md'),
+                Split::make([
+                    TextColumn::make('code')
+                        ->label('رقم')
+                        ->weight('bold')
+                        ->size('lg')
+                        ->searchable()
+                        ->sortable(),
+                    TextColumn::make('status')
+                        ->label('الحالة')
+                        ->badge()
+                        ->alignEnd(),
+                ]),
+                Stack::make([
+                    TextColumn::make('name')
+                        ->label('الاسم')
+                        ->weight('semibold')
+                        ->searchable()
+                        ->placeholder('بدون اسم'),
+                    TextColumn::make('type')
+                        ->label('النوع')
+                        ->color('gray')
+                        ->size('sm')
+                        ->searchable(),
+                ]),
                 TextColumn::make('service_due')
                     ->label('الصيانة')
                     ->state(fn (Crane $record): string => self::dueLabel($record))
@@ -56,6 +58,22 @@ class CranesTable
                         'مجدولة' => 'success',
                         default => 'gray',
                     }),
+                Split::make([
+                    TextColumn::make('site.name')
+                        ->label('الموقع')
+                        ->icon('heroicon-o-map-pin')
+                        ->color('gray')
+                        ->size('sm')
+                        ->sortable(),
+                    TextColumn::make('current_km')
+                        ->label('العداد')
+                        ->numeric()
+                        ->suffix(' كم')
+                        ->color('gray')
+                        ->size('sm')
+                        ->alignEnd()
+                        ->sortable(),
+                ]),
             ])
             ->filters([
                 SelectFilter::make('site_id')
