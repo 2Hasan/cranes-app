@@ -18,14 +18,14 @@ class RolePermissionSeeder extends Seeder
         'admin' => [
             'crane.view', 'crane.manage', 'km.record', 'maintenance.create',
             'fault.create', 'fault.resolve', 'report.export',
-            'sites.view_all', 'sites.manage', 'users.manage',
+            'sites.view_all', 'sites.manage', 'users.manage', 'tires.manage',
         ],
         'supervisor' => [
             'crane.view', 'crane.manage', 'km.record', 'maintenance.create',
-            'fault.create', 'fault.resolve', 'report.export', 'sites.view_all',
+            'fault.create', 'fault.resolve', 'report.export', 'sites.view_all', 'tires.manage',
         ],
         'technician' => [
-            'crane.view', 'km.record', 'maintenance.create', 'fault.create', 'fault.resolve',
+            'crane.view', 'km.record', 'maintenance.create', 'fault.create', 'fault.resolve', 'tires.manage',
         ],
         'viewer' => [
             'crane.view', 'report.export',
