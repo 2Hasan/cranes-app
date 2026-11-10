@@ -15,6 +15,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ViewColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\HtmlString;
 
 class CranesTable
 {
@@ -27,9 +28,11 @@ class CranesTable
                 Split::make([
                     TextColumn::make('code')
                         ->label('رقم')
-                        ->weight('bold')
-                        ->size('lg')
-                        ->extraAttributes(['class' => 'crane-code'])
+                        ->html()
+                        ->formatStateUsing(fn (string $state): HtmlString => new HtmlString(
+                            '<img class="crane-plate-img" loading="lazy" alt="'.e('رقم الرافعة '.$state).'" src="'
+                            .e(route('cranes.plate', ['code' => $state])).'">'
+                        ))
                         ->searchable()
                         ->sortable(),
                     TextColumn::make('status')

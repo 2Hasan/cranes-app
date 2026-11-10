@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\MaintenanceType;
+use App\Enums\RepairResult;
 use Database\Factories\MaintenanceRecordFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -23,6 +24,7 @@ class MaintenanceRecord extends Model
         'technician_name',
         'created_by',
         'type',
+        'repair_result',
         'performed_on',
         'km',
         'description',
@@ -33,6 +35,7 @@ class MaintenanceRecord extends Model
     {
         return [
             'type' => MaintenanceType::class,
+            'repair_result' => RepairResult::class,
             'performed_on' => 'date',
             'km' => 'integer',
         ];

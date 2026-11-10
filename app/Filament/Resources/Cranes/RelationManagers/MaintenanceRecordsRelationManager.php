@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Cranes\RelationManagers;
 
 use App\Enums\MaintenanceType;
+use App\Enums\RepairResult;
 use App\Models\MaintenanceRecord;
 use App\Services\KmRecorder;
 use Filament\Actions\CreateAction;
@@ -12,6 +13,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -28,7 +30,13 @@ class MaintenanceRecordsRelationManager extends RelationManager
             Select::make('type')
                 ->label('نوع الصيانة')
                 ->options(MaintenanceType::class)
-                ->required(),
+                ->required()
+                ->live(),
+            Select::make('repair_result')
+                ->label('نتيجة الإصلاح')
+                ->options(RepairResult::class)
+                ->required()
+                ->visible(fn (Get $get): bool => $get('type') === MaintenanceType::Repair->value),
             DatePicker::make('performed_on')
                 ->label('التاريخ')
                 ->default(now())
@@ -55,6 +63,11 @@ class MaintenanceRecordsRelationManager extends RelationManager
                 TextColumn::make('type')
                     ->label('النوع')
                     ->badge(),
+                TextColumn::make('repair_result')
+                    ->label('نتيجة الإصلاح')
+                    ->badge()
+                    ->placeholder('—')
+                    ->visibleFrom('md'),
                 TextColumn::make('performed_on')
                     ->label('التاريخ')
                     ->date()

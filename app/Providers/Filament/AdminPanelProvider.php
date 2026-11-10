@@ -32,6 +32,8 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->passwordReset(resetAction: SetInitialPassword::class)
             ->brandName('متابعة الرافعات')
+            ->brandLogo(asset('images/agency-logo.png'))
+            ->brandLogoHeight('2.5rem')
             ->font('Tajawal')
             ->colors([
                 'primary' => Color::Teal,
