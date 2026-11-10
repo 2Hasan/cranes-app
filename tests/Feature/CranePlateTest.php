@@ -20,8 +20,9 @@ class CranePlateTest extends TestCase
 
         $response->assertOk();
         $response->assertHeader('Content-Type', 'image/svg+xml');
-        $this->assertStringContainsString('>R-42</tspan>', $response->getContent());
-        $this->assertStringNotContainsString('>4778</tspan>', $response->getContent());
+        $this->assertStringContainsString('<path fill="#000000"', $response->getContent());
+        $this->assertStringNotContainsString('4778', $response->getContent());
+        $this->assertStringNotContainsString('>R-42</tspan>', $response->getContent());
     }
 
     public function test_guests_cannot_view_the_plate(): void
