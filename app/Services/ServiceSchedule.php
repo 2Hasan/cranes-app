@@ -24,7 +24,7 @@ class ServiceSchedule
      * Works out the next service due by date and/or by kilometres.
      * The baseline is the latest periodic record, or the crane's initial values.
      *
-     * @return array{state: string, date_state: string, km_state: string, next_date: ?string, days_left: ?int, next_km: ?int, km_left: ?int}
+     * @return array{state: string, date_state: string, km_state: string, next_date: ?string, days_left: ?int, next_km: ?int, km_left: ?int, date_progress: ?float, km_progress: ?float}
      */
     public function for(Crane $crane): array
     {
@@ -72,7 +72,57 @@ class ServiceSchedule
             'days_left' => $daysLeft,
             'next_km' => $nextKm,
             'km_left' => $kmLeft,
+            'date_progress' => $lastDate !== null && $crane->service_interval_days
+                ? $this->progress(Carbon::parse($lastDate)->startOfDay()->diffInDays(now()->startOfDay()), $crane->service_interval_days)
+                : null,
+            'km_progress' => $lastKm !== null && $crane->service_interval_km
+                ? $this->progress($crane->current_km - $lastKm, $crane->service_interval_km)
+                : null,
         ];
+    }
+
+    /**
+     * Human text for the crane card, e.g. "بعد 3 أيام · تجاوزت 1,082 كم".
+     *
+     * @param  array{days_left: ?int, km_left: ?int}  $schedule
+     */
+    public function summary(array $schedule): string
+    {
+        $parts = [];
+
+        if ($schedule['days_left'] !== null) {
+            $days = $schedule['days_left'];
+            $parts[] = match (true) {
+                $days < 0 => 'متأخرة '.$this->dayCount(-$days),
+                $days === 0 => 'الصيانة اليوم',
+                default => 'بعد '.$this->dayCount($days),
+            };
+        }
+
+        if ($schedule['km_left'] !== null) {
+            $km = $schedule['km_left'];
+            $parts[] = $km < 0
+                ? 'تجاوزت '.number_format(-$km).' كم'
+                : 'بعد '.number_format($km).' كم';
+        }
+
+        return $parts !== [] ? implode(' · ', $parts) : 'لم تُحدد دورة الصيانة';
+    }
+
+    private function dayCount(int $days): string
+    {
+        return match (true) {
+            $days === 1 => 'يوم',
+            $days === 2 => 'يومين',
+            $days >= 3 && $days <= 10 => $days.' أيام',
+            default => $days.' يومًا',
+        };
+    }
+
+    /** Share of the service cycle already used, between 0 and 1. */
+    private function progress(int $used, int $interval): float
+    {
+        return max(0, min(1, $used / $interval));
     }
 
     private function worst(string $first, string $second): string

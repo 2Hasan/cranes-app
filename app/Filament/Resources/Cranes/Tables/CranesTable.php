@@ -6,13 +6,13 @@ use App\Enums\CraneStatus;
 use App\Models\Crane;
 use App\Models\Site;
 use App\Services\KmRecorder;
-use App\Services\ServiceSchedule;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ViewColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
@@ -29,6 +29,7 @@ class CranesTable
                         ->label('رقم')
                         ->weight('bold')
                         ->size('lg')
+                        ->extraAttributes(['class' => 'crane-code'])
                         ->searchable()
                         ->sortable(),
                     TextColumn::make('status')
@@ -48,16 +49,9 @@ class CranesTable
                         ->size('sm')
                         ->searchable(),
                 ]),
-                TextColumn::make('service_due')
+                ViewColumn::make('service_due')
                     ->label('الصيانة')
-                    ->state(fn (Crane $record): string => self::dueLabel($record))
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'متأخرة' => 'danger',
-                        'قريبة' => 'warning',
-                        'مجدولة' => 'success',
-                        default => 'gray',
-                    }),
+                    ->view('components.service-progress'),
                 Split::make([
                     TextColumn::make('site.name')
                         ->label('الموقع')
@@ -107,15 +101,5 @@ class CranesTable
                     ->visible(fn (): bool => auth()->user()?->can('report.export') ?? false),
                 EditAction::make(),
             ]);
-    }
-
-    private static function dueLabel(Crane $record): string
-    {
-        return match (app(ServiceSchedule::class)->for($record)['state']) {
-            ServiceSchedule::STATE_LATE => 'متأخرة',
-            ServiceSchedule::STATE_SOON => 'قريبة',
-            ServiceSchedule::STATE_OK => 'مجدولة',
-            default => 'غير محددة',
-        };
     }
 }

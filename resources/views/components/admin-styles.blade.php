@@ -7,6 +7,15 @@
         text-align: start;
     }
 
+    /* Crane number shown as a bordered tag, like a plate. */
+    .crane-code {
+        display: inline-block;
+        border: 2px solid currentColor;
+        border-radius: 0.375rem;
+        padding: 0.125rem 0.625rem;
+        letter-spacing: 0.02em;
+    }
+
     /* Comfortable tap targets on phones. */
     @media (max-width: 767px) {
         .fi-btn {

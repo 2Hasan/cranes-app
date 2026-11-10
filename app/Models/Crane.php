@@ -36,6 +36,19 @@ class Crane extends Model
         'notes',
     ];
 
+    protected static function booted(): void
+    {
+        // A soft-deleted row still holds its unique code, so move the code aside
+        // to let a new crane reuse the same number.
+        static::deleting(function (Crane $crane): void {
+            if (! $crane->isForceDeleting()) {
+                $crane->newQuery()
+                    ->whereKey($crane->getKey())
+                    ->update(['code' => $crane->code.'#deleted-'.$crane->getKey()]);
+            }
+        });
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {
