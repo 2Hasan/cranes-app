@@ -35,7 +35,7 @@ class TireTransferPageTest extends TestCase
             ->assertSuccessful()
             ->callAction('transfer', [
                 'from_site_id' => $traffic->getKey(),
-                'tire_owner_id' => $owner->getKey(),
+                'owner_name' => 'ملكنا',
                 'to_site_id' => $fursiya->getKey(),
                 'quantity' => 100,
                 'handled_by' => 'أحمد',

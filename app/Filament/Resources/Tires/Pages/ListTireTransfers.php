@@ -35,7 +35,10 @@ class ListTireTransfers extends ListRecords
                 ->icon('heroicon-o-plus')
                 ->schema([
                     self::siteField('site_id', 'الموقع'),
-                    self::ownerField('tire_owner_id', 'المالك'),
+                    TextInput::make('owner_name')
+                        ->label('المالك')
+                        ->maxLength(120)
+                        ->required(),
                     TextInput::make('quantity')
                         ->label('العدد')
                         ->numeric()
@@ -52,7 +55,7 @@ class ListTireTransfers extends ListRecords
                 ->action(function (array $data): void {
                     app(TireStock::class)->addIntake(
                         Site::query()->findOrFail($data['site_id']),
-                        TireOwner::query()->findOrFail($data['tire_owner_id']),
+                        TireOwner::query()->firstOrCreate(['name' => trim($data['owner_name'])]),
                         (int) $data['quantity'],
                         Carbon::parse($data['received_on']),
                         $data['note'] ?? null,
@@ -65,7 +68,10 @@ class ListTireTransfers extends ListRecords
                 ->icon('heroicon-o-arrow-right-circle')
                 ->schema([
                     self::siteField('from_site_id', 'من موقع'),
-                    self::ownerField('tire_owner_id', 'المالك'),
+                    TextInput::make('owner_name')
+                        ->label('المالك')
+                        ->maxLength(120)
+                        ->required(),
                     self::siteField('to_site_id', 'إلى موقع', allowNew: true),
                     TextInput::make('quantity')
                         ->label('العدد')
@@ -89,7 +95,7 @@ class ListTireTransfers extends ListRecords
                     app(TireStock::class)->transfer(
                         Site::query()->findOrFail($data['from_site_id']),
                         Site::query()->findOrFail($data['to_site_id']),
-                        TireOwner::query()->findOrFail($data['tire_owner_id']),
+                        TireOwner::query()->firstOrCreate(['name' => trim($data['owner_name'])]),
                         (int) $data['quantity'],
                         $data['handled_by'],
                         Carbon::parse($data['moved_at']),
@@ -103,7 +109,10 @@ class ListTireTransfers extends ListRecords
                 ->icon('heroicon-o-arrow-uturn-left')
                 ->schema([
                     self::siteField('site_id', 'من الموقع'),
-                    self::ownerField('tire_owner_id', 'المالك'),
+                    TextInput::make('owner_name')
+                        ->label('المالك')
+                        ->maxLength(120)
+                        ->required(),
                     TextInput::make('quantity')
                         ->label('العدد')
                         ->numeric()
@@ -121,7 +130,7 @@ class ListTireTransfers extends ListRecords
                 ->action(function (array $data): void {
                     app(TireStock::class)->returnToOwner(
                         Site::query()->findOrFail($data['site_id']),
-                        TireOwner::query()->findOrFail($data['tire_owner_id']),
+                        TireOwner::query()->firstOrCreate(['name' => trim($data['owner_name'])]),
                         (int) $data['quantity'],
                         Carbon::parse($data['returned_at']),
                         $data['note'] ?? null,
@@ -159,22 +168,5 @@ class ListTireTransfers extends ListRecords
         }
 
         return $field;
-    }
-
-    public static function ownerField(string $name, string $label): Select
-    {
-        return Select::make($name)
-            ->label($label)
-            ->options(fn (): array => TireOwner::query()->orderBy('name')->pluck('name', 'id')->all())
-            ->searchable()
-            ->required()
-            ->createOptionForm([
-                TextInput::make('name')
-                    ->label('اسم المالك')
-                    ->required()
-                    ->maxLength(120)
-                    ->unique(TireOwner::class, 'name'),
-            ])
-            ->createOptionUsing(fn (array $data): int => TireOwner::query()->create($data)->getKey());
     }
 }
