@@ -327,4 +327,232 @@ class TireStock
             default => self::STATUS_PARTIAL,
         };
     }
+
+    /**
+     * @throws ValidationException
+     */
+    public function updateIntake(TireIntake $intake, Site $site, TireOwner $owner, int $quantity, Carbon $receivedOn, ?string $note): TireIntake
+    {
+        return $this->guard(function () use ($intake, $site, $owner, $quantity, $receivedOn, $note): TireIntake {
+            $this->positiveQuantity($quantity);
+
+            $intake->update([
+                'site_id' => $site->getKey(),
+                'tire_owner_id' => $owner->getKey(),
+                'quantity' => $quantity,
+                'received_on' => $receivedOn->toDateString(),
+                'note' => $note,
+            ]);
+
+            return $intake;
+        });
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    public function deleteIntake(TireIntake $intake): void
+    {
+        $this->guard(fn () => $intake->delete());
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    public function updateTransfer(
+        TireTransfer $transfer,
+        Site $from,
+        Site $to,
+        TireOwner $owner,
+        int $quantity,
+        string $handledBy,
+        Carbon $movedAt,
+        ?string $note,
+    ): TireTransfer {
+        if ($from->getKey() === $to->getKey()) {
+            throw ValidationException::withMessages(['to_site_name' => 'لا يمكن النقل لنفس الموقع.']);
+        }
+
+        return $this->guard(function () use ($transfer, $from, $to, $owner, $quantity, $handledBy, $movedAt, $note): TireTransfer {
+            $this->positiveQuantity($quantity);
+
+            $returned = $this->returnedTotal($transfer);
+
+            if ($quantity < $returned) {
+                throw ValidationException::withMessages([
+                    'quantity' => "لا يمكن جعل العدد أقل من المسترجع ({$returned}).",
+                ]);
+            }
+
+            $transfer->update([
+                'from_site_id' => $from->getKey(),
+                'to_site_id' => $to->getKey(),
+                'tire_owner_id' => $owner->getKey(),
+                'quantity' => $quantity,
+                'handled_by' => $handledBy,
+                'moved_at' => $movedAt,
+                'note' => $note,
+            ]);
+
+            return $transfer;
+        });
+    }
+
+    /**
+     * Deleting a transfer also deletes the returns recorded against it.
+     *
+     * @throws ValidationException
+     */
+    public function deleteTransfer(TireTransfer $transfer): void
+    {
+        $this->guard(function () use ($transfer): void {
+            $transfer->returns()->delete();
+            $transfer->delete();
+        });
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    public function updateReturn(TireReturn $return, int $returnedQuantity, int $damagedQuantity, string $returnedBy, Carbon $returnedAt): TireReturn
+    {
+        return $this->guard(function () use ($return, $returnedQuantity, $damagedQuantity, $returnedBy, $returnedAt): TireReturn {
+            $total = $returnedQuantity + $damagedQuantity;
+
+            if ($total <= 0) {
+                throw ValidationException::withMessages(['returned_quantity' => 'أدخل كمية الاسترجاع أو التالف.']);
+            }
+
+            $transfer = $return->transfer;
+            $othersTotal = $this->returnedTotal($transfer) - ($return->returned_quantity + $return->damaged_quantity);
+
+            if ($othersTotal + $total > $transfer->quantity) {
+                throw ValidationException::withMessages([
+                    'returned_quantity' => 'المجموع أكبر من عدد النقلة الأصلية.',
+                ]);
+            }
+
+            $return->update([
+                'returned_quantity' => $returnedQuantity,
+                'damaged_quantity' => $damagedQuantity,
+                'returned_by' => $returnedBy,
+                'returned_at' => $returnedAt,
+            ]);
+
+            return $return;
+        });
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    public function deleteReturn(TireReturn $return): void
+    {
+        $this->guard(fn () => $return->delete());
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    public function updateDamage(TireDamage $damage, Site $site, TireOwner $owner, int $quantity, Carbon $recordedOn, ?string $note): TireDamage
+    {
+        return $this->guard(function () use ($damage, $site, $owner, $quantity, $recordedOn, $note): TireDamage {
+            $this->positiveQuantity($quantity);
+
+            $damage->update([
+                'site_id' => $site->getKey(),
+                'tire_owner_id' => $owner->getKey(),
+                'quantity' => $quantity,
+                'recorded_on' => $recordedOn->toDateString(),
+                'note' => $note,
+            ]);
+
+            return $damage;
+        });
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    public function deleteDamage(TireDamage $damage): void
+    {
+        $this->guard(fn () => $damage->delete());
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    public function updateOwnerReturn(TireOwnerReturn $return, Site $site, TireOwner $owner, int $quantity, Carbon $returnedAt, ?string $note): TireOwnerReturn
+    {
+        return $this->guard(function () use ($return, $site, $owner, $quantity, $returnedAt, $note): TireOwnerReturn {
+            $this->positiveQuantity($quantity);
+
+            $return->update([
+                'site_id' => $site->getKey(),
+                'tire_owner_id' => $owner->getKey(),
+                'quantity' => $quantity,
+                'returned_at' => $returnedAt,
+                'note' => $note,
+            ]);
+
+            return $return;
+        });
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    public function deleteOwnerReturn(TireOwnerReturn $return): void
+    {
+        $this->guard(fn () => $return->delete());
+    }
+
+    /**
+     * Runs a change and rolls it back if any site would be left holding a negative count.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $change
+     * @return T
+     *
+     * @throws ValidationException
+     */
+    private function guard(callable $change): mixed
+    {
+        return DB::transaction(function () use ($change): mixed {
+            $result = $change();
+
+            $this->ensureNoNegativeBalances();
+
+            return $result;
+        });
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    private function ensureNoNegativeBalances(): void
+    {
+        foreach (Site::query()->get() as $site) {
+            foreach (TireOwner::query()->get() as $owner) {
+                $balance = $this->balance($site, $owner);
+
+                if ($balance < 0) {
+                    throw ValidationException::withMessages([
+                        'quantity' => "هذا التعديل يجعل رصيد {$owner->name} في {$site->name} سالباً ({$balance}).",
+                    ]);
+                }
+            }
+        }
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    private function positiveQuantity(int $quantity): void
+    {
+        if ($quantity <= 0) {
+            throw ValidationException::withMessages(['quantity' => 'أدخل عدد أكبر من صفر.']);
+        }
+    }
 }

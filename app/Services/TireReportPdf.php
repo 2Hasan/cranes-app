@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\TireDamage;
 use App\Models\TireOwnerReturn;
+use App\Models\TireReturn;
 use App\Models\TireTransfer;
 use Illuminate\Support\Facades\View;
 use Mpdf\Mpdf;
@@ -14,23 +15,29 @@ class TireReportPdf
     public function __construct(private TireStock $stock) {}
 
     /**
-     * Renders the tire report (balances, movements, damage and owner returns) as PDF bytes.
+     * Renders the tire report as PDF bytes. Each section lists its own records,
+     * so transfers, returns, damage and owner returns read independently.
      */
     public function render(): string
     {
         $transfers = TireTransfer::query()
-            ->with(['fromSite', 'toSite', 'owner', 'returns'])
+            ->with(['fromSite', 'toSite', 'owner'])
             ->orderByDesc('moved_at')
             ->get()
             ->map(fn (TireTransfer $transfer): array => [
                 'transfer' => $transfer,
                 'outstanding' => $this->stock->outstanding($transfer),
-                'status' => $this->stock->status($transfer),
             ]);
+
+        $returns = TireReturn::query()
+            ->with(['transfer.fromSite', 'transfer.toSite', 'transfer.owner'])
+            ->orderByDesc('returned_at')
+            ->get();
 
         $html = View::make('reports.tires', [
             'balances' => $this->stock->balances(),
             'transfers' => $transfers,
+            'returns' => $returns,
             'damages' => TireDamage::query()->with(['site', 'owner'])->orderByDesc('recorded_on')->get(),
             'ownerReturns' => TireOwnerReturn::query()->with(['site', 'owner'])->orderByDesc('returned_at')->get(),
             'generatedAt' => now()->format('Y-m-d H:i'),

@@ -13,8 +13,8 @@
         th, td { border: 1px solid #cdd5db; padding: 4px 6px; text-align: right; vertical-align: top; }
         th { background: #e3e8eb; font-weight: bold; }
         .returned { color: #1b7a49; font-weight: bold; }
-        .partial { color: #a8500a; font-weight: bold; }
         .pending { color: #b3261e; font-weight: bold; }
+        .danger { color: #b3261e; }
         .empty { color: #566774; padding: 6px 0; }
         .small { font-size: 8.5pt; color: #566774; }
     </style>
@@ -48,20 +48,19 @@
         </table>
     @endif
 
-    <h2>حركات النقل</h2>
+    <h2>النقلات</h2>
     @if ($transfers->isEmpty())
-        <div class="empty">لا توجد حركات نقل.</div>
+        <div class="empty">لا توجد نقلات.</div>
     @else
         <table>
             <tr>
                 <th>التاريخ والوقت</th>
                 <th>المالك</th>
-                <th>من</th>
-                <th>إلى</th>
+                <th>من موقع</th>
+                <th>إلى موقع</th>
                 <th>العدد</th>
                 <th>من أخذها</th>
-                <th>الاسترجاع</th>
-                <th>الحالة</th>
+                <th>المتبقي عند الموقع</th>
             </tr>
             @foreach ($transfers as $row)
                 @php($transfer = $row['transfer'])
@@ -72,17 +71,37 @@
                     <td>{{ $transfer->toSite->name }}</td>
                     <td>{{ $transfer->quantity }}</td>
                     <td>{{ $transfer->handled_by }}</td>
-                    <td class="small">
-                        @forelse ($transfer->returns->sortBy('returned_at') as $return)
-                            <div dir="ltr" style="text-align: right">{{ $return->returned_at->format('Y-m-d H:i') }}</div>
-                            <div>{{ $return->returned_by }} · صالح {{ $return->returned_quantity }} · تالف {{ $return->damaged_quantity }}</div>
-                        @empty
-                            —
-                        @endforelse
+                    <td class="{{ $row['outstanding'] > 0 ? 'pending' : 'returned' }}">
+                        {{ $row['outstanding'] > 0 ? $row['outstanding'] : 'تم الاسترجاع' }}
                     </td>
-                    <td class="{{ $row['status'] === 'returned' ? 'returned' : ($row['status'] === 'partial' ? 'partial' : 'pending') }}">
-                        {{ $row['outstanding'] > 0 ? 'متبقي '.$row['outstanding'] : 'تم الاسترجاع' }}
-                    </td>
+                </tr>
+            @endforeach
+        </table>
+    @endif
+
+    <h2>الاسترجاعات</h2>
+    @if ($returns->isEmpty())
+        <div class="empty">لا توجد استرجاعات.</div>
+    @else
+        <table>
+            <tr>
+                <th>التاريخ والوقت</th>
+                <th>المالك</th>
+                <th>من موقع النقل</th>
+                <th>إلى الموقع الأصلي</th>
+                <th>صالح</th>
+                <th>تالف</th>
+                <th>من رجعها</th>
+            </tr>
+            @foreach ($returns as $return)
+                <tr>
+                    <td dir="ltr">{{ $return->returned_at->format('Y-m-d H:i') }}</td>
+                    <td>{{ $return->transfer->owner->name }}</td>
+                    <td>{{ $return->transfer->toSite->name }}</td>
+                    <td>{{ $return->transfer->fromSite->name }}</td>
+                    <td>{{ $return->returned_quantity }}</td>
+                    <td class="{{ $return->damaged_quantity > 0 ? 'danger' : '' }}">{{ $return->damaged_quantity }}</td>
+                    <td>{{ $return->returned_by }}</td>
                 </tr>
             @endforeach
         </table>
