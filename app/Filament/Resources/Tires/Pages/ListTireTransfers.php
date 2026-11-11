@@ -4,12 +4,10 @@ namespace App\Filament\Resources\Tires\Pages;
 
 use App\Filament\Resources\Tires\TireTransferResource;
 use App\Filament\Widgets\TireBalanceOverview;
-use App\Models\Site;
 use App\Services\TireStock;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Pages\ListRecords;
@@ -33,11 +31,8 @@ class ListTireTransfers extends ListRecords
                 ->label('إضافة مطاط لموقع')
                 ->icon('heroicon-o-plus')
                 ->schema([
-                    self::siteField('site_id', 'الموقع'),
-                    TextInput::make('owner_name')
-                        ->label('المالك')
-                        ->maxLength(120)
-                        ->required(),
+                    self::siteNameField('site_name', 'الموقع'),
+                    self::ownerNameField(),
                     TextInput::make('quantity')
                         ->label('العدد')
                         ->numeric()
@@ -52,9 +47,11 @@ class ListTireTransfers extends ListRecords
                         ->maxLength(500),
                 ])
                 ->action(function (array $data): void {
-                    app(TireStock::class)->addIntake(
-                        Site::query()->findOrFail($data['site_id']),
-                        app(TireStock::class)->ownerByName($data['owner_name']),
+                    $stock = app(TireStock::class);
+
+                    $stock->addIntake(
+                        $stock->siteByName($data['site_name']),
+                        $stock->ownerByName($data['owner_name']),
                         (int) $data['quantity'],
                         Carbon::parse($data['received_on']),
                         $data['note'] ?? null,
@@ -66,12 +63,12 @@ class ListTireTransfers extends ListRecords
                 ->label('نقل مطاط')
                 ->icon('heroicon-o-arrow-right-circle')
                 ->schema([
-                    self::siteField('from_site_id', 'من موقع'),
-                    TextInput::make('owner_name')
-                        ->label('المالك')
-                        ->maxLength(120)
-                        ->required(),
-                    self::siteField('to_site_id', 'إلى موقع', allowNew: true),
+                    self::siteNameField('from_site_name', 'من موقع'),
+                    self::ownerNameField(),
+                    self::siteNameField('to_site_name', 'إلى موقع'),
+                    Textarea::make('to_site_details')
+                        ->label('تفاصيل الموقع الجديد (اختياري)')
+                        ->maxLength(1000),
                     TextInput::make('quantity')
                         ->label('العدد')
                         ->numeric()
@@ -91,10 +88,12 @@ class ListTireTransfers extends ListRecords
                         ->maxLength(500),
                 ])
                 ->action(function (array $data): void {
-                    app(TireStock::class)->transfer(
-                        Site::query()->findOrFail($data['from_site_id']),
-                        Site::query()->findOrFail($data['to_site_id']),
-                        app(TireStock::class)->ownerByName($data['owner_name']),
+                    $stock = app(TireStock::class);
+
+                    $stock->transfer(
+                        $stock->siteByName($data['from_site_name']),
+                        $stock->siteByName($data['to_site_name'], $data['to_site_details'] ?? null),
+                        $stock->ownerByName($data['owner_name']),
                         (int) $data['quantity'],
                         $data['handled_by'],
                         Carbon::parse($data['moved_at']),
@@ -103,15 +102,44 @@ class ListTireTransfers extends ListRecords
                     );
                 })
                 ->successNotificationTitle('تم تسجيل النقل'),
+            Action::make('damage')
+                ->label('تسجيل تالف')
+                ->icon('heroicon-o-exclamation-triangle')
+                ->schema([
+                    self::siteNameField('site_name', 'الموقع'),
+                    self::ownerNameField(),
+                    TextInput::make('quantity')
+                        ->label('عدد التالف')
+                        ->numeric()
+                        ->minValue(1)
+                        ->required(),
+                    DatePicker::make('recorded_on')
+                        ->label('التاريخ')
+                        ->default(now())
+                        ->required(),
+                    TextInput::make('note')
+                        ->label('ملاحظة')
+                        ->maxLength(500),
+                ])
+                ->action(function (array $data): void {
+                    $stock = app(TireStock::class);
+
+                    $stock->recordDamage(
+                        $stock->siteByName($data['site_name']),
+                        $stock->ownerByName($data['owner_name']),
+                        (int) $data['quantity'],
+                        Carbon::parse($data['recorded_on']),
+                        $data['note'] ?? null,
+                        auth()->user(),
+                    );
+                })
+                ->successNotificationTitle('تم تسجيل التالف'),
             Action::make('returnToOwner')
                 ->label('رجوع مطاط للمالك')
                 ->icon('heroicon-o-arrow-uturn-left')
                 ->schema([
-                    self::siteField('site_id', 'من الموقع'),
-                    TextInput::make('owner_name')
-                        ->label('المالك')
-                        ->maxLength(120)
-                        ->required(),
+                    self::siteNameField('site_name', 'من الموقع'),
+                    self::ownerNameField(),
                     TextInput::make('quantity')
                         ->label('العدد')
                         ->numeric()
@@ -127,9 +155,11 @@ class ListTireTransfers extends ListRecords
                         ->maxLength(500),
                 ])
                 ->action(function (array $data): void {
-                    app(TireStock::class)->returnToOwner(
-                        Site::query()->findOrFail($data['site_id']),
-                        app(TireStock::class)->ownerByName($data['owner_name']),
+                    $stock = app(TireStock::class);
+
+                    $stock->returnToOwner(
+                        $stock->siteByName($data['site_name']),
+                        $stock->ownerByName($data['owner_name']),
                         (int) $data['quantity'],
                         Carbon::parse($data['returned_at']),
                         $data['note'] ?? null,
@@ -137,35 +167,26 @@ class ListTireTransfers extends ListRecords
                     );
                 })
                 ->successNotificationTitle('تم تسجيل الرجوع للمالك'),
+            Action::make('report')
+                ->label('تقرير PDF')
+                ->icon('heroicon-o-document-text')
+                ->url(fn (): string => route('tires.report'), shouldOpenInNewTab: true),
         ];
     }
 
-    /**
-     * A site picker; when $allowNew is set, a new site with its details can be created inline.
-     */
-    public static function siteField(string $name, string $label, bool $allowNew = false): Select
+    public static function siteNameField(string $name, string $label): TextInput
     {
-        $field = Select::make($name)
+        return TextInput::make($name)
             ->label($label)
-            ->options(fn (): array => Site::query()->orderBy('name')->pluck('name', 'id')->all())
-            ->searchable()
+            ->maxLength(255)
             ->required();
+    }
 
-        if ($allowNew) {
-            $field
-                ->createOptionForm([
-                    TextInput::make('name')
-                        ->label('اسم الموقع')
-                        ->required()
-                        ->maxLength(255)
-                        ->unique(Site::class, 'name'),
-                    Textarea::make('details')
-                        ->label('تفاصيل الموقع')
-                        ->maxLength(1000),
-                ])
-                ->createOptionUsing(fn (array $data): int => Site::query()->create($data)->getKey());
-        }
-
-        return $field;
+    public static function ownerNameField(): TextInput
+    {
+        return TextInput::make('owner_name')
+            ->label('المالك')
+            ->maxLength(120)
+            ->required();
     }
 }

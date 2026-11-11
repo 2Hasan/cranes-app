@@ -34,9 +34,9 @@ class TireTransferPageTest extends TestCase
             ->test(ListTireTransfers::class)
             ->assertSuccessful()
             ->callAction('transfer', [
-                'from_site_id' => $traffic->getKey(),
+                'from_site_name' => 'المرور',
                 'owner_name' => 'ملكنا',
-                'to_site_id' => $fursiya->getKey(),
+                'to_site_name' => 'الفروسية',
                 'quantity' => 100,
                 'handled_by' => 'أحمد',
                 'moved_at' => '2026-11-10 09:30:00',

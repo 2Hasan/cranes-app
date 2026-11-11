@@ -143,6 +143,38 @@ class TireStockTest extends TestCase
         $stock->ownerByName('   ');
     }
 
+    public function test_damage_is_taken_out_of_the_site_stock(): void
+    {
+        [$traffic, , $owner, $user, $stock] = $this->makeSitesAndStock();
+        $stock->addIntake($traffic, $owner, 1000, Carbon::parse('2026-11-01'), null, $user);
+
+        $stock->recordDamage($traffic, $owner, 100, Carbon::parse('2026-11-02'), 'كسر', $user);
+
+        $this->assertSame(900, $stock->balance($traffic, $owner));
+    }
+
+    public function test_damage_cannot_exceed_the_stock_at_the_site(): void
+    {
+        [$traffic, , $owner, $user, $stock] = $this->makeSitesAndStock();
+        $stock->addIntake($traffic, $owner, 50, Carbon::parse('2026-11-01'), null, $user);
+
+        $this->expectException(ValidationException::class);
+
+        $stock->recordDamage($traffic, $owner, 51, Carbon::parse('2026-11-02'), null, $user);
+    }
+
+    public function test_a_typed_site_name_is_reused_and_keeps_its_details(): void
+    {
+        [, , , , $stock] = $this->makeSitesAndStock();
+
+        $first = $stock->siteByName('  إشارة   فلان ', 'عند الدوار الثالث');
+        $second = $stock->siteByName('إشارة فلان', 'تفاصيل أخرى');
+
+        $this->assertSame($first->getKey(), $second->getKey());
+        $this->assertSame('إشارة فلان', $first->name);
+        $this->assertSame('عند الدوار الثالث', $first->fresh()->details);
+    }
+
     /**
      * @return array{0: Site, 1: Site, 2: TireOwner, 3: User, 4: TireStock}
      */

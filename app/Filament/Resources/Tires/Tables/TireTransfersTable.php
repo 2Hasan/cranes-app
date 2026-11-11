@@ -7,6 +7,8 @@ use App\Services\TireStock;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\TextInput;
+use Filament\Tables\Columns\Layout\Split;
+use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
@@ -18,40 +20,61 @@ class TireTransfersTable
         return $table
             ->query(TireTransfer::query()->with(['fromSite', 'toSite', 'owner', 'returns']))
             ->defaultSort('moved_at', 'desc')
+            ->paginationPageOptions([10, 25, 50])
             ->columns([
-                TextColumn::make('moved_at')
-                    ->label('التاريخ والوقت')
-                    ->dateTime('Y-m-d H:i')
-                    ->sortable(),
-                TextColumn::make('owner.name')
-                    ->label('المالك')
-                    ->searchable(),
-                TextColumn::make('fromSite.name')
-                    ->label('من موقع')
-                    ->searchable(),
-                TextColumn::make('toSite.name')
-                    ->label('إلى موقع')
-                    ->searchable(),
-                TextColumn::make('quantity')
-                    ->label('العدد')
-                    ->numeric(),
-                TextColumn::make('handled_by')
-                    ->label('من أخذها')
-                    ->searchable(),
-                TextColumn::make('outstanding')
-                    ->label('الحالة')
-                    ->state(fn (TireTransfer $record): int => app(TireStock::class)->outstanding($record))
-                    ->formatStateUsing(fn (int $state): string => $state > 0 ? "متبقي {$state}" : 'تم الاسترجاع')
-                    ->badge()
-                    ->color(fn (TireTransfer $record): string => match (app(TireStock::class)->status($record)) {
-                        TireStock::STATUS_RETURNED => 'success',
-                        TireStock::STATUS_PARTIAL => 'warning',
-                        default => 'danger',
-                    }),
+                Split::make([
+                    Stack::make([
+                        TextColumn::make('fromSite.name')
+                            ->label('من موقع')
+                            ->weight('semibold')
+                            ->searchable(),
+                        TextColumn::make('toSite.name')
+                            ->label('إلى موقع')
+                            ->icon('heroicon-o-arrow-long-left')
+                            ->color('gray')
+                            ->searchable(),
+                        TextColumn::make('owner.name')
+                            ->label('المالك')
+                            ->size('sm')
+                            ->color('gray')
+                            ->searchable(),
+                        TextColumn::make('handled_by')
+                            ->label('من أخذها')
+                            ->size('sm')
+                            ->color('gray')
+                            ->searchable(),
+                        TextColumn::make('moved_at')
+                            ->label('التاريخ والوقت')
+                            ->dateTime('Y-m-d H:i')
+                            ->size('sm')
+                            ->color('gray')
+                            ->sortable(),
+                    ]),
+                    Stack::make([
+                        TextColumn::make('quantity')
+                            ->label('العدد')
+                            ->numeric()
+                            ->suffix(' مطاط')
+                            ->weight('bold')
+                            ->alignEnd(),
+                        TextColumn::make('outstanding')
+                            ->label('الحالة')
+                            ->state(fn (TireTransfer $record): int => app(TireStock::class)->outstanding($record))
+                            ->formatStateUsing(fn (int $state): string => $state > 0 ? "متبقي {$state}" : 'تم الاسترجاع')
+                            ->badge()
+                            ->alignEnd()
+                            ->color(fn (TireTransfer $record): string => match (app(TireStock::class)->status($record)) {
+                                TireStock::STATUS_RETURNED => 'success',
+                                TireStock::STATUS_PARTIAL => 'warning',
+                                default => 'danger',
+                            }),
+                    ])->alignEnd(),
+                ]),
                 TextColumn::make('returns')
                     ->label('الاسترجاع')
                     ->state(fn (TireTransfer $record): string => self::returnsSummary($record))
                     ->html()
+                    ->size('sm')
                     ->wrap(),
             ])
             ->recordActions([

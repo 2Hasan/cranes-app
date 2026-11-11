@@ -3,6 +3,7 @@
 use App\Http\Controllers\CranePlateController;
 use App\Http\Controllers\CraneReportController;
 use App\Http\Controllers\PushSubscriptionController;
+use App\Http\Controllers\TireReportController;
 use Illuminate\Support\Facades\Route;
 
 // The app is internal: visitors go to the login page, signed-in users to the dashboard.
@@ -24,3 +25,7 @@ Route::get('/cranes/{code}/plate.svg', CranePlateController::class)
     ->middleware('auth')
     ->where('code', '[^/]+')
     ->name('cranes.plate');
+
+Route::get('/tires/report', TireReportController::class)
+    ->middleware('auth')
+    ->name('tires.report');

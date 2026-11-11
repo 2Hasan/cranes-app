@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Site;
+use App\Models\TireDamage;
 use App\Models\TireIntake;
 use App\Models\TireOwner;
 use App\Models\TireOwnerReturn;
@@ -33,13 +34,36 @@ class TireStock
      */
     public function ownerByName(string $name): TireOwner
     {
+        return TireOwner::query()->firstOrCreate(['name' => $this->cleanName($name, 'owner_name', 'اسم المالك')]);
+    }
+
+    /**
+     * Finds the site by name, ignoring extra spaces, or creates it. Details are kept on first creation.
+     *
+     * @throws ValidationException
+     */
+    public function siteByName(string $name, ?string $details = null): Site
+    {
+        $site = Site::query()->firstOrCreate(
+            ['name' => $this->cleanName($name, 'site_name', 'اسم الموقع')],
+            ['details' => $details !== null && trim($details) !== '' ? trim($details) : null],
+        );
+
+        return $site;
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    private function cleanName(string $name, string $field, string $label): string
+    {
         $clean = trim((string) preg_replace('/\s+/u', ' ', $name));
 
         if ($clean === '') {
-            throw ValidationException::withMessages(['owner_name' => 'اسم المالك مطلوب.']);
+            throw ValidationException::withMessages([$field => "{$label} مطلوب."]);
         }
 
-        return TireOwner::query()->firstOrCreate(['name' => $clean]);
+        return $clean;
     }
 
     public function addIntake(
@@ -173,6 +197,43 @@ class TireStock
     }
 
     /**
+     * Records tires that were damaged while held at the site. They leave the stock.
+     *
+     * @throws ValidationException
+     */
+    public function recordDamage(
+        Site $site,
+        TireOwner $owner,
+        int $quantity,
+        Carbon $recordedOn,
+        ?string $note,
+        User $by,
+    ): TireDamage {
+        return DB::transaction(function () use ($site, $owner, $quantity, $recordedOn, $note, $by): TireDamage {
+            $available = $this->balance($site, $owner);
+
+            if ($quantity <= 0) {
+                throw ValidationException::withMessages(['quantity' => 'أدخل عدد أكبر من صفر.']);
+            }
+
+            if ($quantity > $available) {
+                throw ValidationException::withMessages([
+                    'quantity' => "التالف ({$quantity}) أكبر من المتوفر في {$site->name} لدى {$owner->name} ({$available}).",
+                ]);
+            }
+
+            return TireDamage::create([
+                'site_id' => $site->getKey(),
+                'tire_owner_id' => $owner->getKey(),
+                'quantity' => $quantity,
+                'recorded_on' => $recordedOn->toDateString(),
+                'note' => $note,
+                'created_by' => $by->getKey(),
+            ]);
+        });
+    }
+
+    /**
      * Tires of one owner currently held at the site.
      */
     public function balance(Site $site, TireOwner $owner): int
@@ -213,7 +274,12 @@ class TireStock
             ->where('tire_owner_id', $ownerId)
             ->sum('quantity');
 
-        return $intakes - $sentOut + $receivedBack + $sentIn - $leftAsReturnedOrDamaged - $givenToOwner;
+        $damaged = (int) TireDamage::query()
+            ->where('site_id', $siteId)
+            ->where('tire_owner_id', $ownerId)
+            ->sum('quantity');
+
+        return $intakes - $sentOut + $receivedBack + $sentIn - $leftAsReturnedOrDamaged - $givenToOwner - $damaged;
     }
 
     /**
