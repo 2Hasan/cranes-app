@@ -26,6 +26,22 @@ class TireStock
 
     public const STATUS_PENDING = 'pending';
 
+    /**
+     * Finds the owner by name, ignoring extra spaces, or creates it.
+     *
+     * @throws ValidationException
+     */
+    public function ownerByName(string $name): TireOwner
+    {
+        $clean = trim((string) preg_replace('/\s+/u', ' ', $name));
+
+        if ($clean === '') {
+            throw ValidationException::withMessages(['owner_name' => 'اسم المالك مطلوب.']);
+        }
+
+        return TireOwner::query()->firstOrCreate(['name' => $clean]);
+    }
+
     public function addIntake(
         Site $site,
         TireOwner $owner,

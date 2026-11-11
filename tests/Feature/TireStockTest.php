@@ -123,6 +123,26 @@ class TireStockTest extends TestCase
         $stock->transfer($traffic, $traffic, $owner, 10, 'أحمد', now(), null, $user);
     }
 
+    public function test_owner_names_ignore_extra_spaces(): void
+    {
+        [, , , , $stock] = $this->makeSitesAndStock();
+
+        $owner = $stock->ownerByName('  الأشغال   ');
+
+        $this->assertSame('الأشغال', $owner->name);
+        $this->assertSame($owner->getKey(), $stock->ownerByName('الأشغال')->getKey());
+        $this->assertSame(1, TireOwner::query()->where('name', 'الأشغال')->count());
+    }
+
+    public function test_a_blank_owner_name_is_rejected(): void
+    {
+        [, , , , $stock] = $this->makeSitesAndStock();
+
+        $this->expectException(ValidationException::class);
+
+        $stock->ownerByName('   ');
+    }
+
     /**
      * @return array{0: Site, 1: Site, 2: TireOwner, 3: User, 4: TireStock}
      */

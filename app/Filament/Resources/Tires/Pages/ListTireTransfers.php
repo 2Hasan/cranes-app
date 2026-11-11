@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Tires\Pages;
 use App\Filament\Resources\Tires\TireTransferResource;
 use App\Filament\Widgets\TireBalanceOverview;
 use App\Models\Site;
-use App\Models\TireOwner;
 use App\Services\TireStock;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -55,7 +54,7 @@ class ListTireTransfers extends ListRecords
                 ->action(function (array $data): void {
                     app(TireStock::class)->addIntake(
                         Site::query()->findOrFail($data['site_id']),
-                        TireOwner::query()->firstOrCreate(['name' => trim($data['owner_name'])]),
+                        app(TireStock::class)->ownerByName($data['owner_name']),
                         (int) $data['quantity'],
                         Carbon::parse($data['received_on']),
                         $data['note'] ?? null,
@@ -95,7 +94,7 @@ class ListTireTransfers extends ListRecords
                     app(TireStock::class)->transfer(
                         Site::query()->findOrFail($data['from_site_id']),
                         Site::query()->findOrFail($data['to_site_id']),
-                        TireOwner::query()->firstOrCreate(['name' => trim($data['owner_name'])]),
+                        app(TireStock::class)->ownerByName($data['owner_name']),
                         (int) $data['quantity'],
                         $data['handled_by'],
                         Carbon::parse($data['moved_at']),
@@ -130,7 +129,7 @@ class ListTireTransfers extends ListRecords
                 ->action(function (array $data): void {
                     app(TireStock::class)->returnToOwner(
                         Site::query()->findOrFail($data['site_id']),
-                        TireOwner::query()->firstOrCreate(['name' => trim($data['owner_name'])]),
+                        app(TireStock::class)->ownerByName($data['owner_name']),
                         (int) $data['quantity'],
                         Carbon::parse($data['returned_at']),
                         $data['note'] ?? null,
