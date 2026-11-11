@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Filament\Resources\Tires\Pages\ListTireTransfers;
 use App\Models\Site;
+use App\Models\TireOwner;
 use App\Models\TireTransfer;
 use App\Models\User;
 use App\Services\TireStock;
@@ -26,13 +27,15 @@ class TireTransferPageTest extends TestCase
 
         $traffic = Site::factory()->create(['name' => 'المرور']);
         $fursiya = Site::factory()->create(['name' => 'الفروسية']);
-        app(TireStock::class)->addIntake($traffic, 1500, Carbon::parse('2026-11-01'), null, $admin);
+        $owner = TireOwner::query()->firstOrCreate(['name' => 'ملكنا']);
+        app(TireStock::class)->addIntake($traffic, $owner, 1500, Carbon::parse('2026-11-01'), null, $admin);
 
         Livewire::actingAs($admin)
             ->test(ListTireTransfers::class)
             ->assertSuccessful()
             ->callAction('transfer', [
                 'from_site_id' => $traffic->getKey(),
+                'tire_owner_id' => $owner->getKey(),
                 'to_site_id' => $fursiya->getKey(),
                 'quantity' => 100,
                 'handled_by' => 'أحمد',
@@ -59,6 +62,6 @@ class TireTransferPageTest extends TestCase
             'damaged_quantity' => 10,
             'returned_by' => 'سالم',
         ]);
-        $this->assertSame(1460, app(TireStock::class)->balance($traffic));
+        $this->assertSame(1460, app(TireStock::class)->balance($traffic, $owner));
     }
 }

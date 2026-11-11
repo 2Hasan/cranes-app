@@ -12,6 +12,7 @@ class TireTransfer extends Model
     protected $fillable = [
         'from_site_id',
         'to_site_id',
+        'tire_owner_id',
         'quantity',
         'handled_by',
         'moved_at',
@@ -26,6 +27,12 @@ class TireTransfer extends Model
             'quantity' => 'integer',
             'moved_at' => 'datetime',
         ];
+    }
+
+    /** @return BelongsTo<TireOwner, $this> */
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(TireOwner::class, 'tire_owner_id');
     }
 
     /** @return BelongsTo<Site, $this> */

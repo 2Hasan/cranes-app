@@ -16,13 +16,16 @@ class TireTransfersTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->query(TireTransfer::query()->with(['fromSite', 'toSite', 'returns']))
+            ->query(TireTransfer::query()->with(['fromSite', 'toSite', 'owner', 'returns']))
             ->defaultSort('moved_at', 'desc')
             ->columns([
                 TextColumn::make('moved_at')
                     ->label('التاريخ والوقت')
                     ->dateTime('Y-m-d H:i')
                     ->sortable(),
+                TextColumn::make('owner.name')
+                    ->label('المالك')
+                    ->searchable(),
                 TextColumn::make('fromSite.name')
                     ->label('من موقع')
                     ->searchable(),

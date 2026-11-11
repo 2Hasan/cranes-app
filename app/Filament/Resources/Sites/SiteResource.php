@@ -6,6 +6,7 @@ use App\Filament\Resources\Sites\Pages\ManageSites;
 use App\Models\Site;
 use BackedEnum;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -30,6 +31,10 @@ class SiteResource extends Resource
                 ->label('اسم الموقع')
                 ->required()
                 ->unique(ignoreRecord: true),
+            Textarea::make('details')
+                ->label('تفاصيل الموقع')
+                ->maxLength(1000)
+                ->columnSpanFull(),
         ]);
     }
 

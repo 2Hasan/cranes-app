@@ -17,6 +17,7 @@ class Site extends Model
     /** @var list<string> */
     protected $fillable = [
         'name',
+        'details',
     ];
 
     /** @return HasMany<Crane, $this> */

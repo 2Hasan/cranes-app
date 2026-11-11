@@ -10,6 +10,7 @@ class TireIntake extends Model
     /** @var list<string> */
     protected $fillable = [
         'site_id',
+        'tire_owner_id',
         'quantity',
         'received_on',
         'note',
@@ -23,6 +24,12 @@ class TireIntake extends Model
             'quantity' => 'integer',
             'received_on' => 'date',
         ];
+    }
+
+    /** @return BelongsTo<TireOwner, $this> */
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(TireOwner::class, 'tire_owner_id');
     }
 
     /** @return BelongsTo<Site, $this> */
