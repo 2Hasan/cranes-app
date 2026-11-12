@@ -3,6 +3,9 @@
 namespace App\Filament\Resources\Cranes\Tables;
 
 use App\Enums\CraneStatus;
+use App\Enums\FaultStatus;
+use App\Filament\Resources\Cranes\CraneResource;
+use App\Filament\Resources\Cranes\RelationManagers\FaultsRelationManager;
 use App\Models\Crane;
 use App\Models\Site;
 use App\Services\KmRecorder;
@@ -15,6 +18,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ViewColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
 
 class CranesTable
@@ -24,6 +28,10 @@ class CranesTable
         return $table
             ->contentGrid(['md' => 2, 'xl' => 3])
             ->paginationPageOptions([12, 24, 48])
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->withCount([
+                'faults as open_faults_count' => fn (Builder $faults) => $faults
+                    ->where('status', '!=', FaultStatus::Resolved->value),
+            ]))
             ->columns([
                 Split::make([
                     TextColumn::make('code')
@@ -40,6 +48,21 @@ class CranesTable
                         ->badge()
                         ->alignEnd(),
                 ]),
+                TextColumn::make('open_faults_count')
+                    ->label('الأعطال')
+                    ->state(fn (Crane $record): int => (int) $record->open_faults_count)
+                    ->formatStateUsing(fn (int $state): string => $state > 0
+                        ? "يوجد {$state} عطل يحتاج تصليح"
+                        : 'لا توجد أعطال مفتوحة')
+                    ->icon(fn (int $state): string => $state > 0
+                        ? 'heroicon-o-exclamation-triangle'
+                        : 'heroicon-o-check-circle')
+                    ->color(fn (int $state): string => $state > 0 ? 'danger' : 'gray')
+                    ->weight('semibold')
+                    ->url(fn (Crane $record): ?string => $record->open_faults_count > 0
+                        ? CraneResource::getUrl('edit', ['record' => $record]).'?relation='
+                            .array_search(FaultsRelationManager::class, CraneResource::getRelations(), true)
+                        : null),
                 Stack::make([
                     TextColumn::make('name')
                         ->label('الاسم')

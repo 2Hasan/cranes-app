@@ -2,16 +2,25 @@
 
 namespace App\Filament\Resources\Tires\Pages;
 
+use App\Filament\Resources\Sites\SiteResource;
+use App\Filament\Resources\TireDamages\TireDamageResource;
+use App\Filament\Resources\TireIntakes\TireIntakeResource;
+use App\Filament\Resources\TireOwnerReturns\TireOwnerReturnResource;
+use App\Filament\Resources\TireReturns\TireReturnResource;
 use App\Filament\Resources\Tires\TireTransferResource;
 use App\Filament\Widgets\TireBalanceOverview;
 use App\Services\TireStock;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Exceptions\Halt;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\ValidationException;
 
 class ListTireTransfers extends ListRecords
 {
@@ -47,16 +56,18 @@ class ListTireTransfers extends ListRecords
                         ->maxLength(500),
                 ])
                 ->action(function (array $data): void {
-                    $stock = app(TireStock::class);
+                    self::runStockChange(function () use ($data): void {
+                        $stock = app(TireStock::class);
 
-                    $stock->addIntake(
-                        $stock->siteByName($data['site_name']),
-                        $stock->ownerByName($data['owner_name']),
-                        (int) $data['quantity'],
-                        Carbon::parse($data['received_on']),
-                        $data['note'] ?? null,
-                        auth()->user(),
-                    );
+                        $stock->addIntake(
+                            $stock->siteByName($data['site_name']),
+                            $stock->ownerByName($data['owner_name']),
+                            (int) $data['quantity'],
+                            Carbon::parse($data['received_on']),
+                            $data['note'] ?? null,
+                            auth()->user(),
+                        );
+                    });
                 })
                 ->successNotificationTitle('تمت إضافة المطاط'),
             Action::make('transfer')
@@ -88,18 +99,20 @@ class ListTireTransfers extends ListRecords
                         ->maxLength(500),
                 ])
                 ->action(function (array $data): void {
-                    $stock = app(TireStock::class);
+                    self::runStockChange(function () use ($data): void {
+                        $stock = app(TireStock::class);
 
-                    $stock->transfer(
-                        $stock->siteByName($data['from_site_name']),
-                        $stock->siteByName($data['to_site_name'], $data['to_site_details'] ?? null),
-                        $stock->ownerByName($data['owner_name']),
-                        (int) $data['quantity'],
-                        $data['handled_by'],
-                        Carbon::parse($data['moved_at']),
-                        $data['note'] ?? null,
-                        auth()->user(),
-                    );
+                        $stock->transfer(
+                            $stock->siteByName($data['from_site_name']),
+                            $stock->siteByName($data['to_site_name'], $data['to_site_details'] ?? null),
+                            $stock->ownerByName($data['owner_name']),
+                            (int) $data['quantity'],
+                            $data['handled_by'],
+                            Carbon::parse($data['moved_at']),
+                            $data['note'] ?? null,
+                            auth()->user(),
+                        );
+                    });
                 })
                 ->successNotificationTitle('تم تسجيل النقل'),
             Action::make('damage')
@@ -122,16 +135,18 @@ class ListTireTransfers extends ListRecords
                         ->maxLength(500),
                 ])
                 ->action(function (array $data): void {
-                    $stock = app(TireStock::class);
+                    self::runStockChange(function () use ($data): void {
+                        $stock = app(TireStock::class);
 
-                    $stock->recordDamage(
-                        $stock->siteByName($data['site_name']),
-                        $stock->ownerByName($data['owner_name']),
-                        (int) $data['quantity'],
-                        Carbon::parse($data['recorded_on']),
-                        $data['note'] ?? null,
-                        auth()->user(),
-                    );
+                        $stock->recordDamage(
+                            $stock->siteByName($data['site_name']),
+                            $stock->ownerByName($data['owner_name']),
+                            (int) $data['quantity'],
+                            Carbon::parse($data['recorded_on']),
+                            $data['note'] ?? null,
+                            auth()->user(),
+                        );
+                    });
                 })
                 ->successNotificationTitle('تم تسجيل التالف'),
             Action::make('returnToOwner')
@@ -155,23 +170,70 @@ class ListTireTransfers extends ListRecords
                         ->maxLength(500),
                 ])
                 ->action(function (array $data): void {
-                    $stock = app(TireStock::class);
+                    self::runStockChange(function () use ($data): void {
+                        $stock = app(TireStock::class);
 
-                    $stock->returnToOwner(
-                        $stock->siteByName($data['site_name']),
-                        $stock->ownerByName($data['owner_name']),
-                        (int) $data['quantity'],
-                        Carbon::parse($data['returned_at']),
-                        $data['note'] ?? null,
-                        auth()->user(),
-                    );
+                        $stock->returnToOwner(
+                            $stock->siteByName($data['site_name']),
+                            $stock->ownerByName($data['owner_name']),
+                            (int) $data['quantity'],
+                            Carbon::parse($data['returned_at']),
+                            $data['note'] ?? null,
+                            auth()->user(),
+                        );
+                    });
                 })
                 ->successNotificationTitle('تم تسجيل الرجوع للمالك'),
             Action::make('report')
                 ->label('تقرير PDF')
                 ->icon('heroicon-o-document-text')
                 ->url(fn (): string => route('tires.report'), shouldOpenInNewTab: true),
+            ActionGroup::make([
+                Action::make('intakeRecords')
+                    ->label('الإضافات')
+                    ->url(TireIntakeResource::getUrl()),
+                Action::make('damageRecords')
+                    ->label('التالف')
+                    ->url(TireDamageResource::getUrl()),
+                Action::make('ownerReturnRecords')
+                    ->label('الرجوع للمالك')
+                    ->url(TireOwnerReturnResource::getUrl()),
+                Action::make('returnRecords')
+                    ->label('الاسترجاعات')
+                    ->url(TireReturnResource::getUrl()),
+                Action::make('siteRecords')
+                    ->label('المواقع')
+                    ->url(SiteResource::getUrl()),
+            ])
+                ->label('سجلات وتعديل')
+                ->icon('heroicon-o-queue-list')
+                ->button()
+                ->color('gray'),
         ];
+    }
+
+    /**
+     * Runs a stock change. A refused change (for example one that would leave a negative count)
+     * is shown to the user as a notification instead of failing silently.
+     *
+     * @param  callable(): void  $change
+     *
+     * @throws Halt
+     */
+    public static function runStockChange(callable $change): void
+    {
+        try {
+            $change();
+        } catch (ValidationException $exception) {
+            Notification::make()
+                ->title('لم يتم التنفيذ')
+                ->body(collect($exception->errors())->flatten()->first())
+                ->danger()
+                ->persistent()
+                ->send();
+
+            throw new Halt;
+        }
     }
 
     public static function siteNameField(string $name, string $label): TextInput

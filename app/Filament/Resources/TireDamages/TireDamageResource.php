@@ -83,16 +83,18 @@ class TireDamageResource extends Resource
                         'note' => $record->note,
                     ])
                     ->action(function (TireDamage $record, array $data): void {
-                        $stock = app(TireStock::class);
+                        ListTireTransfers::runStockChange(function () use ($record, $data): void {
+                            $stock = app(TireStock::class);
 
-                        $stock->updateDamage(
-                            $record,
-                            $stock->siteByName($data['site_name']),
-                            $stock->ownerByName($data['owner_name']),
-                            (int) $data['quantity'],
-                            Carbon::parse($data['recorded_on']),
-                            $data['note'] ?? null,
-                        );
+                            $stock->updateDamage(
+                                $record,
+                                $stock->siteByName($data['site_name']),
+                                $stock->ownerByName($data['owner_name']),
+                                (int) $data['quantity'],
+                                Carbon::parse($data['recorded_on']),
+                                $data['note'] ?? null,
+                            );
+                        });
                     })
                     ->successNotificationTitle('تم التعديل'),
                 Action::make('delete')
@@ -101,7 +103,9 @@ class TireDamageResource extends Resource
                     ->color('danger')
                     ->requiresConfirmation()
                     ->modalDescription('سيتم حذف هذا التالف نهائياً، ولا يمكن التراجع.')
-                    ->action(fn (TireDamage $record) => app(TireStock::class)->deleteDamage($record))
+                    ->action(fn (TireDamage $record) => ListTireTransfers::runStockChange(
+                        fn () => app(TireStock::class)->deleteDamage($record),
+                    ))
                     ->successNotificationTitle('تم الحذف'),
             ]);
     }
@@ -111,6 +115,11 @@ class TireDamageResource extends Resource
         return [
             'index' => ManageTireDamages::route('/'),
         ];
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
     }
 
     public static function canViewAny(): bool

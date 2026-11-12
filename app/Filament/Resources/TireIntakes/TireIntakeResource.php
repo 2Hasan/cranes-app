@@ -83,16 +83,18 @@ class TireIntakeResource extends Resource
                         'note' => $record->note,
                     ])
                     ->action(function (TireIntake $record, array $data): void {
-                        $stock = app(TireStock::class);
+                        ListTireTransfers::runStockChange(function () use ($record, $data): void {
+                            $stock = app(TireStock::class);
 
-                        $stock->updateIntake(
-                            $record,
-                            $stock->siteByName($data['site_name']),
-                            $stock->ownerByName($data['owner_name']),
-                            (int) $data['quantity'],
-                            Carbon::parse($data['received_on']),
-                            $data['note'] ?? null,
-                        );
+                            $stock->updateIntake(
+                                $record,
+                                $stock->siteByName($data['site_name']),
+                                $stock->ownerByName($data['owner_name']),
+                                (int) $data['quantity'],
+                                Carbon::parse($data['received_on']),
+                                $data['note'] ?? null,
+                            );
+                        });
                     })
                     ->successNotificationTitle('تم التعديل'),
                 Action::make('delete')
@@ -101,7 +103,9 @@ class TireIntakeResource extends Resource
                     ->color('danger')
                     ->requiresConfirmation()
                     ->modalDescription('سيتم حذف هذه الإضافة نهائياً، ولا يمكن التراجع.')
-                    ->action(fn (TireIntake $record) => app(TireStock::class)->deleteIntake($record))
+                    ->action(fn (TireIntake $record) => ListTireTransfers::runStockChange(
+                        fn () => app(TireStock::class)->deleteIntake($record),
+                    ))
                     ->successNotificationTitle('تم الحذف'),
             ]);
     }
@@ -111,6 +115,11 @@ class TireIntakeResource extends Resource
         return [
             'index' => ManageTireIntakes::route('/'),
         ];
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
     }
 
     public static function canViewAny(): bool

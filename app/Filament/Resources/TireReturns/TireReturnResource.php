@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\TireReturns;
 
 use App\Filament\Resources\TireReturns\Pages\ManageTireReturns;
+use App\Filament\Resources\Tires\Pages\ListTireTransfers;
 use App\Models\TireReturn;
 use App\Services\TireStock;
 use BackedEnum;
@@ -89,13 +90,13 @@ class TireReturnResource extends Resource
                         'returned_at' => $record->returned_at,
                     ])
                     ->action(function (TireReturn $record, array $data): void {
-                        app(TireStock::class)->updateReturn(
+                        ListTireTransfers::runStockChange(fn () => app(TireStock::class)->updateReturn(
                             $record,
                             (int) $data['returned_quantity'],
                             (int) $data['damaged_quantity'],
                             $data['returned_by'],
                             Carbon::parse($data['returned_at']),
-                        );
+                        ));
                     })
                     ->successNotificationTitle('تم التعديل'),
                 Action::make('delete')
@@ -104,7 +105,9 @@ class TireReturnResource extends Resource
                     ->color('danger')
                     ->requiresConfirmation()
                     ->modalDescription('سيتم حذف هذا الاسترجاع نهائياً، ولا يمكن التراجع.')
-                    ->action(fn (TireReturn $record) => app(TireStock::class)->deleteReturn($record))
+                    ->action(fn (TireReturn $record) => ListTireTransfers::runStockChange(
+                        fn () => app(TireStock::class)->deleteReturn($record),
+                    ))
                     ->successNotificationTitle('تم الحذف'),
             ]);
     }
@@ -114,6 +117,11 @@ class TireReturnResource extends Resource
         return [
             'index' => ManageTireReturns::route('/'),
         ];
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
     }
 
     public static function canViewAny(): bool

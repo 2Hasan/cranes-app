@@ -84,16 +84,18 @@ class TireOwnerReturnResource extends Resource
                         'note' => $record->note,
                     ])
                     ->action(function (TireOwnerReturn $record, array $data): void {
-                        $stock = app(TireStock::class);
+                        ListTireTransfers::runStockChange(function () use ($record, $data): void {
+                            $stock = app(TireStock::class);
 
-                        $stock->updateOwnerReturn(
-                            $record,
-                            $stock->siteByName($data['site_name']),
-                            $stock->ownerByName($data['owner_name']),
-                            (int) $data['quantity'],
-                            Carbon::parse($data['returned_at']),
-                            $data['note'] ?? null,
-                        );
+                            $stock->updateOwnerReturn(
+                                $record,
+                                $stock->siteByName($data['site_name']),
+                                $stock->ownerByName($data['owner_name']),
+                                (int) $data['quantity'],
+                                Carbon::parse($data['returned_at']),
+                                $data['note'] ?? null,
+                            );
+                        });
                     })
                     ->successNotificationTitle('تم التعديل'),
                 Action::make('delete')
@@ -102,7 +104,9 @@ class TireOwnerReturnResource extends Resource
                     ->color('danger')
                     ->requiresConfirmation()
                     ->modalDescription('سيتم حذف هذا الرجوع للمالك نهائياً، ولا يمكن التراجع.')
-                    ->action(fn (TireOwnerReturn $record) => app(TireStock::class)->deleteOwnerReturn($record))
+                    ->action(fn (TireOwnerReturn $record) => ListTireTransfers::runStockChange(
+                        fn () => app(TireStock::class)->deleteOwnerReturn($record),
+                    ))
                     ->successNotificationTitle('تم الحذف'),
             ]);
     }
@@ -112,6 +116,11 @@ class TireOwnerReturnResource extends Resource
         return [
             'index' => ManageTireOwnerReturns::route('/'),
         ];
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
     }
 
     public static function canViewAny(): bool

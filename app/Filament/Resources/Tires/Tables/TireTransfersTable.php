@@ -107,14 +107,14 @@ class TireTransfersTable
                             ->required(),
                     ])
                     ->action(function (TireTransfer $record, array $data): void {
-                        app(TireStock::class)->recordReturn(
+                        ListTireTransfers::runStockChange(fn () => app(TireStock::class)->recordReturn(
                             $record,
                             (int) $data['returned_quantity'],
                             (int) $data['damaged_quantity'],
                             $data['returned_by'],
                             Carbon::parse($data['returned_at']),
                             auth()->user(),
-                        );
+                        ));
                     })
                     ->successNotificationTitle('تم تسجيل الاسترجاع')
                     ->visible(fn (TireTransfer $record): bool => app(TireStock::class)->outstanding($record) > 0),
@@ -157,18 +157,20 @@ class TireTransfersTable
                         'note' => $record->note,
                     ])
                     ->action(function (TireTransfer $record, array $data): void {
-                        $stock = app(TireStock::class);
+                        ListTireTransfers::runStockChange(function () use ($record, $data): void {
+                            $stock = app(TireStock::class);
 
-                        $stock->updateTransfer(
-                            $record,
-                            $stock->siteByName($data['from_site_name']),
-                            $stock->siteByName($data['to_site_name'], $data['to_site_details'] ?? null),
-                            $stock->ownerByName($data['owner_name']),
-                            (int) $data['quantity'],
-                            $data['handled_by'],
-                            Carbon::parse($data['moved_at']),
-                            $data['note'] ?? null,
-                        );
+                            $stock->updateTransfer(
+                                $record,
+                                $stock->siteByName($data['from_site_name']),
+                                $stock->siteByName($data['to_site_name'], $data['to_site_details'] ?? null),
+                                $stock->ownerByName($data['owner_name']),
+                                (int) $data['quantity'],
+                                $data['handled_by'],
+                                Carbon::parse($data['moved_at']),
+                                $data['note'] ?? null,
+                            );
+                        });
                     })
                     ->successNotificationTitle('تم تعديل النقل'),
                 Action::make('deleteTransfer')
@@ -177,7 +179,9 @@ class TireTransfersTable
                     ->color('danger')
                     ->requiresConfirmation()
                     ->modalDescription('سيتم حذف النقل وكل الاسترجاعات المرتبطة به نهائياً، ولا يمكن التراجع.')
-                    ->action(fn (TireTransfer $record) => app(TireStock::class)->deleteTransfer($record))
+                    ->action(fn (TireTransfer $record) => ListTireTransfers::runStockChange(
+                        fn () => app(TireStock::class)->deleteTransfer($record),
+                    ))
                     ->successNotificationTitle('تم حذف النقل'),
             ]);
     }
