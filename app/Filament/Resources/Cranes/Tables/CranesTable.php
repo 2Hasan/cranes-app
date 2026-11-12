@@ -13,6 +13,7 @@ use App\Services\KmRecorder;
 use App\Services\ServiceRecorder;
 use App\Services\ServiceSchedule;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
@@ -188,12 +189,18 @@ class CranesTable
                     })
                     ->successNotificationTitle('تم تسجيل السيرفس')
                     ->visible(fn (): bool => auth()->user()?->can('maintenance.create') ?? false),
-                Action::make('report')
-                    ->label('تقرير PDF')
-                    ->icon('heroicon-o-document-text')
-                    ->url(fn (Crane $record): string => route('cranes.report', $record), shouldOpenInNewTab: true)
-                    ->visible(fn (): bool => auth()->user()?->can('report.export') ?? false),
-                EditAction::make(),
+                ActionGroup::make([
+                    Action::make('report')
+                        ->label('تقرير PDF')
+                        ->icon('heroicon-o-document-text')
+                        ->url(fn (Crane $record): string => route('cranes.report', $record), shouldOpenInNewTab: true)
+                        ->visible(fn (): bool => auth()->user()?->can('report.export') ?? false),
+                    EditAction::make(),
+                ])
+                    ->label('المزيد')
+                    ->icon('heroicon-o-ellipsis-vertical')
+                    ->color('gray')
+                    ->size('sm'),
             ]);
     }
 }
