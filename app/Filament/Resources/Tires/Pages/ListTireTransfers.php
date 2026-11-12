@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Tires\Pages;
 
-use App\Filament\Resources\Sites\SiteResource;
 use App\Filament\Resources\TireDamages\TireDamageResource;
 use App\Filament\Resources\TireIntakes\TireIntakeResource;
 use App\Filament\Resources\TireOwnerReturns\TireOwnerReturnResource;
@@ -184,29 +183,31 @@ class ListTireTransfers extends ListRecords
                     });
                 })
                 ->successNotificationTitle('تم تسجيل الرجوع للمالك'),
+            Action::make('report')
+                ->label('تقرير PDF')
+                ->icon('heroicon-o-document-text')
+                ->color('gray')
+                ->url(fn (): string => route('tires.report'), shouldOpenInNewTab: true),
             ActionGroup::make([
-                Action::make('report')
-                    ->label('تقرير PDF')
-                    ->icon('heroicon-o-document-text')
-                    ->url(fn (): string => route('tires.report'), shouldOpenInNewTab: true),
                 Action::make('intakeRecords')
-                    ->label('الإضافات')
+                    ->label('سجل الإضافات')
+                    ->icon('heroicon-o-plus-circle')
                     ->url(TireIntakeResource::getUrl()),
                 Action::make('damageRecords')
-                    ->label('التالف')
+                    ->label('سجل التالف')
+                    ->icon('heroicon-o-exclamation-triangle')
                     ->url(TireDamageResource::getUrl()),
                 Action::make('ownerReturnRecords')
-                    ->label('الرجوع للمالك')
+                    ->label('سجل الرجوع للمالك')
+                    ->icon('heroicon-o-arrow-uturn-left')
                     ->url(TireOwnerReturnResource::getUrl()),
                 Action::make('returnRecords')
-                    ->label('الاسترجاعات')
+                    ->label('سجل الاسترجاعات')
+                    ->icon('heroicon-o-arrow-path')
                     ->url(TireReturnResource::getUrl()),
-                Action::make('siteRecords')
-                    ->label('المواقع')
-                    ->url(SiteResource::getUrl()),
             ])
-                ->label('المزيد')
-                ->icon('heroicon-o-ellipsis-horizontal-circle')
+                ->label('السجلات والتعديل')
+                ->icon('heroicon-o-queue-list')
                 ->button()
                 ->color('gray'),
         ];
