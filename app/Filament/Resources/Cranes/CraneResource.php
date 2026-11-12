@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\Cranes;
 
 use App\Filament\Resources\Cranes\Pages\CreateCrane;
-use App\Filament\Resources\Cranes\Pages\EditCrane;
 use App\Filament\Resources\Cranes\Pages\ListCranes;
 use App\Filament\Resources\Cranes\Pages\ViewCrane;
 use App\Filament\Resources\Cranes\RelationManagers\FaultsRelationManager;
@@ -12,11 +11,13 @@ use App\Filament\Resources\Cranes\Schemas\CraneForm;
 use App\Filament\Resources\Cranes\Tables\CranesTable;
 use App\Models\Crane;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Arr;
 
 class CraneResource extends Resource
 {
@@ -52,8 +53,27 @@ class CraneResource extends Resource
             'index' => ListCranes::route('/'),
             'create' => CreateCrane::route('/create'),
             'view' => ViewCrane::route('/{record}'),
-            'edit' => EditCrane::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * Edits a crane in a modal, from the view page or the crane card.
+     */
+    public static function editAction(): Action
+    {
+        return Action::make('edit')
+            ->label('تعديل')
+            ->icon('heroicon-o-pencil-square')
+            ->color('gray')
+            ->modalHeading('تعديل الرافعة')
+            ->modalSubmitActionLabel('حفظ')
+            ->schema(CraneForm::components(creating: false))
+            ->fillForm(fn (Crane $record): array => $record->attributesToArray())
+            ->action(function (Crane $record, array $data): void {
+                $record->update(Arr::except($data, ['initial_km']));
+            })
+            ->successNotificationTitle('تم تحديث بيانات الرافعة')
+            ->visible(fn (): bool => auth()->user()?->can('crane.manage') ?? false);
     }
 
     public static function getEloquentQuery(): Builder

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Cranes\Pages;
 
 use App\Filament\Resources\Cranes\CraneResource;
 use Filament\Actions\Action;
+use Filament\Actions\DeleteAction;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\Section;
@@ -19,13 +20,8 @@ class ViewCrane extends ViewRecord
             Section::make('البيانات الأساسية')
                 ->icon('heroicon-o-identification')
                 ->headerActions([
-                    // The edit button sits at the section's top-left corner.
-                    Action::make('edit')
-                        ->label('تعديل')
-                        ->icon('heroicon-o-pencil-square')
-                        ->color('gray')
-                        ->url(fn (): string => CraneResource::getUrl('edit', ['record' => $this->getRecord()]))
-                        ->visible(fn (): bool => auth()->user()?->can('crane.manage') ?? false),
+                    // Editing happens in place, in a modal, at the section's top-left corner.
+                    CraneResource::editAction(),
                 ])
                 ->columns(['default' => 2, 'md' => 3])
                 ->components([
@@ -43,5 +39,19 @@ class ViewCrane extends ViewRecord
                         ->badge(),
                 ]),
         ]);
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('report')
+                ->label('تقرير PDF')
+                ->icon('heroicon-o-document-text')
+                ->color('gray')
+                ->url(fn (): string => route('cranes.report', $this->getRecord()), shouldOpenInNewTab: true)
+                ->visible(fn (): bool => auth()->user()?->can('report.export') ?? false),
+            DeleteAction::make()
+                ->visible(fn (): bool => auth()->user()?->can('crane.manage') ?? false),
+        ];
     }
 }

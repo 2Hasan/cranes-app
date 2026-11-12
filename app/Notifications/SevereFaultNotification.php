@@ -27,6 +27,6 @@ class SevereFaultNotification extends Notification
             ->title('عطل '.$this->fault->severity->getLabel().' على الرافعة '.$crane->code)
             ->body($this->fault->title)
             ->tag('fault-'.$this->fault->getKey())
-            ->data(['url' => route('filament.admin.resources.cranes.edit', $crane)]);
+            ->data(['url' => route('filament.admin.resources.cranes.view', $crane)]);
     }
 }

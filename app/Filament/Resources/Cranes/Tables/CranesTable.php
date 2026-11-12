@@ -14,7 +14,6 @@ use App\Services\ServiceRecorder;
 use App\Services\ServiceSchedule;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
-use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\Layout\Split;
@@ -194,7 +193,7 @@ class CranesTable
                         ->icon('heroicon-o-document-text')
                         ->url(fn (Crane $record): string => route('cranes.report', $record), shouldOpenInNewTab: true)
                         ->visible(fn (): bool => auth()->user()?->can('report.export') ?? false),
-                    EditAction::make(),
+                    CraneResource::editAction(),
                 ])
                     ->label('المزيد')
                     ->icon('heroicon-o-ellipsis-vertical')

@@ -26,6 +26,15 @@ class MaintenanceRecordsRelationManager extends RelationManager
 
     protected static ?string $title = 'سجل الصيانة';
 
+    /**
+     * The crane's view page is read-only by default, which would hide these actions.
+     * Each action checks its own permission instead.
+     */
+    public function isReadOnly(): bool
+    {
+        return false;
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema->components([

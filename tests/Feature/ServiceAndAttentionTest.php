@@ -77,7 +77,6 @@ class ServiceAndAttentionTest extends TestCase
         $crane = $this->crane(['current_km' => 100, 'service_interval_km' => 10000, 'last_service_km' => 0]);
 
         $this->actingAs($user)->get(route('filament.admin.resources.cranes.view', $crane))->assertOk();
-        $this->actingAs($user)->get(route('filament.admin.resources.cranes.edit', $crane))->assertOk();
         $this->actingAs($user)->get(route('filament.admin.resources.cranes.index'))->assertOk();
     }
 

@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\MaintenanceType;
-use App\Filament\Resources\Cranes\Pages\EditCrane;
+use App\Filament\Resources\Cranes\Pages\ViewCrane;
 use App\Filament\Resources\Cranes\RelationManagers\MaintenanceRecordsRelationManager;
 use App\Models\Crane;
 use App\Models\MaintenanceRecord;
@@ -29,7 +29,7 @@ class MaintenanceTechnicianNameTest extends TestCase
         Livewire::actingAs($admin)
             ->test(MaintenanceRecordsRelationManager::class, [
                 'ownerRecord' => $crane,
-                'pageClass' => EditCrane::class,
+                'pageClass' => ViewCrane::class,
             ])
             ->callTableAction('create', data: [
                 'type' => MaintenanceType::Periodic->value,
@@ -58,7 +58,7 @@ class MaintenanceTechnicianNameTest extends TestCase
         Livewire::actingAs($admin)
             ->test(MaintenanceRecordsRelationManager::class, [
                 'ownerRecord' => $crane,
-                'pageClass' => EditCrane::class,
+                'pageClass' => ViewCrane::class,
             ])
             ->callTableAction('create', data: [
                 'type' => MaintenanceType::Repair->value,
