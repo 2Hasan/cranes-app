@@ -140,6 +140,22 @@ class ServiceAndAttentionTest extends TestCase
 
         $this->expectException(ValidationException::class);
 
+        app(KmRecorder::class)->correctLatest($crane, 436830);
+    }
+
+    public function test_an_admin_can_force_a_lower_correction(): void
+    {
+        $user = User::factory()->create(['is_active' => true]);
+        $crane = $this->crane(['current_km' => 540515]);
+        KmReading::create(['crane_id' => $crane->getKey(), 'recorded_by' => $user->getKey(), 'km' => 536945, 'recorded_at' => now()->subDay()]);
+        KmReading::create(['crane_id' => $crane->getKey(), 'recorded_by' => $user->getKey(), 'km' => 540515, 'recorded_at' => now()]);
+
+        app(KmRecorder::class)->correctLatest($crane, 436830, allowBelowPrevious: true);
+
+        $this->assertSame(436830, $crane->fresh()->current_km);
+
+        $this->expectException(ValidationException::class);
+
         app(KmRecorder::class)->correctLatest($crane, 520000);
     }
 

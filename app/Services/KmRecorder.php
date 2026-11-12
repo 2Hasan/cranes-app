@@ -18,7 +18,7 @@ class KmRecorder
      */
     public function correctLatest(Crane $crane, int $km, bool $allowBelowPrevious = false): KmReading
     {
-        return DB::transaction(function () use ($crane, $km): KmReading {
+        return DB::transaction(function () use ($crane, $km, $allowBelowPrevious): KmReading {
             $lockedCrane = Crane::query()->lockForUpdate()->findOrFail($crane->getKey());
 
             $latest = KmReading::query()
