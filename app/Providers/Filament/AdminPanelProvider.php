@@ -43,6 +43,10 @@ class AdminPanelProvider extends PanelProvider
                 fn () => view('components.admin-styles'),
             )
             ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn () => view('components.pwa-head'),
+            )
+            ->renderHook(
                 PanelsRenderHook::BODY_END,
                 fn () => view('components.push-notifications'),
             )

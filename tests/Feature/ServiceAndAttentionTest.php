@@ -143,6 +143,18 @@ class ServiceAndAttentionTest extends TestCase
         app(KmRecorder::class)->correctLatest($crane, 520000);
     }
 
+    public function test_the_admin_pages_link_the_web_app_manifest(): void
+    {
+        $this->get(route('filament.admin.auth.login'))
+            ->assertOk()
+            ->assertSee('rel="manifest"', false)
+            ->assertSee('/manifest.webmanifest', false);
+
+        $this->assertFileExists(public_path('manifest.webmanifest'));
+        $this->assertFileExists(public_path('icons/icon-192.png'));
+        $this->assertFileExists(public_path('icons/icon-512.png'));
+    }
+
     public function test_the_roles_page_renders_for_admins(): void
     {
         $this->seed(RolePermissionSeeder::class);
