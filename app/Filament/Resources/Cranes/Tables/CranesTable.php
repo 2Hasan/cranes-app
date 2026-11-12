@@ -187,18 +187,32 @@ class CranesTable
                             ->required(),
                         TextInput::make('km')
                             ->label('العداد عند السيرفس (كم)')
+                            ->helperText(fn (Crane $record): ?string => $record->service_interval_km
+                                ? 'تُخصم منه الدورة ('.number_format($record->service_interval_km).' كم) ويُسجل السيرفس على الناتج. مثال: 10,000 مع دورة 5,000 = سيرفس عند 5,000.'
+                                : null)
                             ->numeric()
                             ->minValue(0)
                             ->required()
                             ->default(fn (Crane $record): int => $record->current_km),
                     ])
                     ->action(function (Crane $record, array $data): void {
-                        app(ServiceRecorder::class)->record(
-                            $record,
-                            Carbon::parse($data['performed_on']),
-                            (int) $data['km'],
-                            auth()->user(),
-                        );
+                        try {
+                            app(ServiceRecorder::class)->record(
+                                $record,
+                                Carbon::parse($data['performed_on']),
+                                (int) $data['km'],
+                                auth()->user(),
+                            );
+                        } catch (ValidationException $exception) {
+                            Notification::make()
+                                ->title('لم يتم تسجيل السيرفس')
+                                ->body(collect($exception->errors())->flatten()->first())
+                                ->danger()
+                                ->persistent()
+                                ->send();
+
+                            throw new Halt;
+                        }
                     })
                     ->successNotificationTitle('تم تسجيل السيرفس')
                     ->visible(fn (): bool => auth()->user()?->can('maintenance.create') ?? false),

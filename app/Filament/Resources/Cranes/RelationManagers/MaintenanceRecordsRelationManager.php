@@ -55,7 +55,7 @@ class MaintenanceRecordsRelationManager extends RelationManager
             TextInput::make('km')
                 ->label('قراءة العداد (كم)')
                 ->numeric()
-                ->minValue(0)
+                ->minValue(fn (): int => $this->getOwnerRecord()->current_km)
                 ->default(fn (): int => $this->getOwnerRecord()->current_km),
             TextInput::make('technician_name')
                 ->label('الفني')

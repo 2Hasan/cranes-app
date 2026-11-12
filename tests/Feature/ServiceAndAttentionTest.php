@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Crane;
+use App\Models\MaintenanceRecord;
 use App\Models\Site;
 use App\Models\User;
 use App\Services\CraneAttention;
@@ -11,36 +12,53 @@ use App\Services\ServiceSchedule;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class ServiceAndAttentionTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_a_service_record_moves_the_next_due_kilometres_forward(): void
+    public function test_a_typed_reading_is_recorded_one_cycle_back_as_the_service_meter(): void
     {
         $this->seed(RolePermissionSeeder::class);
         $user = User::factory()->create(['is_active' => true]);
         $user->assignRole('admin');
-        $crane = $this->crane(['current_km' => 9000, 'service_interval_km' => 10000, 'last_service_km' => 0]);
+        $crane = $this->crane(['current_km' => 9000, 'service_interval_km' => 5000, 'last_service_km' => 0]);
 
-        app(ServiceRecorder::class)->record($crane, Carbon::parse('2026-11-12'), 10000, $user);
+        $record = app(ServiceRecorder::class)->record($crane, Carbon::parse('2026-11-12'), 10000, $user);
 
         $crane->refresh();
+        $this->assertSame(5000, $record->km);
         $this->assertSame(10000, $crane->current_km);
-        $this->assertSame(20000, app(ServiceSchedule::class)->for($crane)['next_km']);
+        $this->assertSame(10000, app(ServiceSchedule::class)->for($crane)['next_km']);
     }
 
-    public function test_a_service_reading_below_the_current_odometer_keeps_the_odometer(): void
+    public function test_a_service_reading_below_the_current_odometer_is_refused(): void
     {
         $this->seed(RolePermissionSeeder::class);
         $user = User::factory()->create(['is_active' => true]);
         $user->assignRole('admin');
         $crane = $this->crane(['current_km' => 9000, 'service_interval_km' => 10000, 'last_service_km' => 0]);
 
-        app(ServiceRecorder::class)->record($crane, Carbon::parse('2026-11-12'), 8000, $user);
+        $this->expectException(ValidationException::class);
 
-        $this->assertSame(9000, $crane->fresh()->current_km);
+        app(ServiceRecorder::class)->record($crane, Carbon::parse('2026-11-12'), 8000, $user);
+    }
+
+    public function test_the_service_is_not_saved_when_the_reading_is_refused(): void
+    {
+        $this->seed(RolePermissionSeeder::class);
+        $user = User::factory()->create(['is_active' => true]);
+        $user->assignRole('admin');
+        $crane = $this->crane(['current_km' => 9000, 'service_interval_km' => 10000, 'last_service_km' => 0]);
+
+        try {
+            app(ServiceRecorder::class)->record($crane, Carbon::parse('2026-11-12'), 8000, $user);
+        } catch (ValidationException) {
+        }
+
+        $this->assertSame(0, MaintenanceRecord::query()->count());
     }
 
     public function test_cranes_needing_service_come_before_the_rest(): void
