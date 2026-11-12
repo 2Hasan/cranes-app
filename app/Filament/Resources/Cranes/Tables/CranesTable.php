@@ -197,7 +197,11 @@ class CranesTable
                             ->minValue(0)
                             ->required(),
                     ])
-                    ->fillForm(fn (Crane $record): array => ['km' => $record->current_km])
+                    // fillForm replaces the whole form state, so the date default must be set here too.
+                    ->fillForm(fn (Crane $record): array => [
+                        'performed_on' => now()->toDateString(),
+                        'km' => $record->current_km,
+                    ])
                     ->action(function (Crane $record, array $data): void {
                         try {
                             app(ServiceRecorder::class)->record(
