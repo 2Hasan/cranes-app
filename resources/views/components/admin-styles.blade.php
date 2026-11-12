@@ -16,6 +16,13 @@
         direction: ltr;
     }
 
+    /* On phones, an odd last stat card spans the full row instead of sitting alone. */
+    @media (max-width: 767px) {
+        .fi-grid:has(> .fi-grid-col > .fi-sc-component > .fi-wi-stats-overview-stat) > .fi-grid-col:last-child:nth-child(odd) {
+            grid-column: 1 / -1;
+        }
+    }
+
     /* Comfortable tap targets on phones. */
     @media (max-width: 767px) {
         .fi-btn {

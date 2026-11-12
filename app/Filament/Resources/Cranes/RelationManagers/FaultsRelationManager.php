@@ -15,6 +15,8 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
+use Filament\Tables\Columns\Layout\Split;
+use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -50,26 +52,39 @@ class FaultsRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                TextColumn::make('title')
-                    ->label('العطل')
-                    ->weight('bold')
-                    ->wrap(),
-                TextColumn::make('severity')
-                    ->label('الخطورة')
-                    ->badge(),
-                TextColumn::make('status')
-                    ->label('الحالة')
-                    ->badge(),
-                TextColumn::make('reported_at')
-                    ->label('تاريخ البلاغ')
-                    ->dateTime()
-                    ->sortable()
-                    ->visibleFrom('md'),
-                TextColumn::make('assignee.name')
-                    ->label('المسؤول')
-                    ->visibleFrom('md'),
+                Split::make([
+                    Stack::make([
+                        TextColumn::make('title')
+                            ->label('العطل')
+                            ->weight('bold')
+                            ->wrap(),
+                        TextColumn::make('reported_at')
+                            ->label('تاريخ البلاغ')
+                            ->dateTime('Y-m-d H:i')
+                            ->size('sm')
+                            ->color('gray')
+                            ->sortable(),
+                        TextColumn::make('assignee.name')
+                            ->label('المسؤول')
+                            ->placeholder('—')
+                            ->size('sm')
+                            ->color('gray'),
+                    ]),
+                    Stack::make([
+                        TextColumn::make('severity')
+                            ->label('الخطورة')
+                            ->badge()
+                            ->alignEnd(),
+                        TextColumn::make('status')
+                            ->label('الحالة')
+                            ->badge()
+                            ->alignEnd(),
+                    ]),
+                ]),
             ])
             ->defaultSort('reported_at', 'desc')
+            ->emptyStateHeading('لا توجد أعطال مسجلة')
+            ->emptyStateDescription('لم يتم تسجيل أي عطل لهذه الرافعة.')
             ->headerActions([
                 CreateAction::make()
                     ->label('تسجيل عطل')

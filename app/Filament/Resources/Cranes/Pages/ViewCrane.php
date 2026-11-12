@@ -18,6 +18,15 @@ class ViewCrane extends ViewRecord
         return $schema->components([
             Section::make('البيانات الأساسية')
                 ->icon('heroicon-o-identification')
+                ->headerActions([
+                    // The edit button sits at the section's top-left corner.
+                    Action::make('edit')
+                        ->label('تعديل')
+                        ->icon('heroicon-o-pencil-square')
+                        ->color('gray')
+                        ->url(fn (): string => CraneResource::getUrl('edit', ['record' => $this->getRecord()]))
+                        ->visible(fn (): bool => auth()->user()?->can('crane.manage') ?? false),
+                ])
                 ->columns(['default' => 2, 'md' => 3])
                 ->components([
                     TextEntry::make('code')
@@ -34,16 +43,5 @@ class ViewCrane extends ViewRecord
                         ->badge(),
                 ]),
         ]);
-    }
-
-    protected function getHeaderActions(): array
-    {
-        return [
-            Action::make('edit')
-                ->label('تعديل')
-                ->icon('heroicon-o-pencil-square')
-                ->url(fn (): string => CraneResource::getUrl('edit', ['record' => $this->getRecord()]))
-                ->visible(fn (): bool => auth()->user()?->can('crane.manage') ?? false),
-        ];
     }
 }

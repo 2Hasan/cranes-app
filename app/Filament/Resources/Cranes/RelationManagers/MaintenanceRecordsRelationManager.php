@@ -15,6 +15,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Filament\Tables\Columns\Layout\Split;
+use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -60,32 +62,47 @@ class MaintenanceRecordsRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                TextColumn::make('type')
-                    ->label('النوع')
-                    ->badge(),
-                TextColumn::make('repair_result')
-                    ->label('نتيجة الإصلاح')
-                    ->badge()
-                    ->placeholder('—')
-                    ->visibleFrom('md'),
-                TextColumn::make('performed_on')
-                    ->label('التاريخ')
-                    ->date()
-                    ->sortable(),
-                TextColumn::make('technician_name')
-                    ->label('الفني')
-                    ->placeholder('—')
-                    ->visibleFrom('md'),
-                TextColumn::make('km')
-                    ->label('العداد (كم)')
-                    ->numeric()
-                    ->visibleFrom('md'),
+                Split::make([
+                    Stack::make([
+                        TextColumn::make('type')
+                            ->label('النوع')
+                            ->badge(),
+                        TextColumn::make('performed_on')
+                            ->label('التاريخ')
+                            ->date('Y-m-d')
+                            ->size('sm')
+                            ->color('gray')
+                            ->sortable(),
+                        TextColumn::make('technician_name')
+                            ->label('الفني')
+                            ->placeholder('—')
+                            ->size('sm')
+                            ->color('gray'),
+                    ]),
+                    Stack::make([
+                        TextColumn::make('km')
+                            ->label('العداد (كم)')
+                            ->numeric()
+                            ->placeholder('—')
+                            ->weight('bold')
+                            ->alignEnd(),
+                        TextColumn::make('repair_result')
+                            ->label('نتيجة الإصلاح')
+                            ->badge()
+                            ->placeholder('—')
+                            ->alignEnd(),
+                    ]),
+                ]),
                 TextColumn::make('description')
                     ->label('التفاصيل')
-                    ->limit(60)
+                    ->size('sm')
+                    ->color('gray')
+                    ->limit(80)
                     ->wrap(),
             ])
             ->defaultSort('performed_on', 'desc')
+            ->emptyStateHeading('لا توجد سجلات صيانة')
+            ->emptyStateDescription('سجّل أول صيانة أو سيرفس لهذه الرافعة.')
             ->headerActions([
                 CreateAction::make()
                     ->label('تسجيل صيانة')

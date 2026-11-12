@@ -12,6 +12,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Component;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Spatie\Permission\Models\Role;
@@ -49,15 +50,22 @@ class RoleResource extends Resource
         return $table
             ->query(Role::query()->withCount(['permissions', 'users']))
             ->columns([
-                TextColumn::make('name')
-                    ->label('الدور')
-                    ->weight('semibold')
-                    ->searchable(),
-                TextColumn::make('permissions_count')
-                    ->label('عدد الصلاحيات')
-                    ->suffix(' صلاحية'),
-                TextColumn::make('users_count')
-                    ->label('عدد المستخدمين'),
+                Stack::make([
+                    TextColumn::make('name')
+                        ->label('الدور')
+                        ->weight('semibold')
+                        ->searchable(),
+                    TextColumn::make('permissions_count')
+                        ->label('عدد الصلاحيات')
+                        ->suffix(' صلاحية')
+                        ->size('sm')
+                        ->color('gray'),
+                    TextColumn::make('users_count')
+                        ->label('عدد المستخدمين')
+                        ->suffix(' مستخدم')
+                        ->size('sm')
+                        ->color('gray'),
+                ]),
             ])
             ->defaultSort('name')
             ->recordActions([

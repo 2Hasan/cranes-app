@@ -59,17 +59,17 @@ class CraneStatsOverview extends StatsOverviewWidget
                 ->description('تحتاج صيانة فوراً')
                 ->icon('heroicon-o-exclamation-triangle')
                 ->color($late > 0 ? 'danger' : 'success')
-                ->url(CraneResource::getUrl('index').'?tableFilters[service][value]=late'),
+                ->url(CraneResource::getUrl('index').'?filters[service][value]=late'),
             Stat::make('صيانة قريبة', $soon)
                 ->description('خلال أسبوعين أو 10% من الدورة')
                 ->icon('heroicon-o-clock')
                 ->color($soon > 0 ? 'warning' : 'success')
-                ->url(CraneResource::getUrl('index').'?tableFilters[service][value]=soon'),
+                ->url(CraneResource::getUrl('index').'?filters[service][value]=soon'),
             Stat::make('أعطال مفتوحة مهمة', $criticalFaults)
                 ->description('عالية أو حرجة ولم تُحل')
                 ->icon('heroicon-o-bolt')
                 ->color($criticalFaults > 0 ? 'danger' : 'success')
-                ->url(CraneResource::getUrl('index').'?tableFilters[faults][value]=open'),
+                ->url(CraneResource::getUrl('index').'?filters[faults][value]=open'),
         ];
     }
 
