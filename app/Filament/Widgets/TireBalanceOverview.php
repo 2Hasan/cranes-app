@@ -13,6 +13,11 @@ class TireBalanceOverview extends StatsOverviewWidget
         return auth()->user()?->can('tires.manage') ?? false;
     }
 
+    protected function getColumns(): int|array
+    {
+        return ['default' => 2, 'md' => 3];
+    }
+
     /** @return array<Stat> */
     protected function getStats(): array
     {

@@ -12,6 +12,7 @@
         display: block;
         width: 11rem;
         height: auto;
+        aspect-ratio: 392 / 196;
         direction: ltr;
     }
 

@@ -12,6 +12,8 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\Layout\Split;
+use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
@@ -33,27 +35,39 @@ class TireOwnerReturnResource extends Resource
             ->defaultSort('returned_at', 'desc')
             ->paginationPageOptions([10, 25, 50])
             ->columns([
-                TextColumn::make('returned_at')
-                    ->label('التاريخ والوقت')
-                    ->dateTime('Y-m-d H:i')
-                    ->sortable(),
-                TextColumn::make('site.name')
-                    ->label('من الموقع')
-                    ->weight('semibold')
-                    ->searchable(),
-                TextColumn::make('owner.name')
-                    ->label('المالك')
-                    ->color('gray')
-                    ->searchable(),
-                TextColumn::make('quantity')
-                    ->label('العدد')
-                    ->numeric()
-                    ->suffix(' مطاط'),
+                Split::make([
+                    Stack::make([
+                        TextColumn::make('site.name')
+                            ->label('من الموقع')
+                            ->weight('semibold')
+                            ->searchable(),
+                        TextColumn::make('owner.name')
+                            ->label('المالك')
+                            ->size('sm')
+                            ->color('gray')
+                            ->searchable(),
+                        TextColumn::make('returned_at')
+                            ->label('التاريخ والوقت')
+                            ->dateTime('Y-m-d H:i')
+                            ->size('sm')
+                            ->color('gray')
+                            ->sortable(),
+                    ]),
+                    Stack::make([
+                        TextColumn::make('quantity')
+                            ->label('العدد')
+                            ->numeric()
+                            ->suffix(' مطاط')
+                            ->weight('bold')
+                            ->alignEnd(),
+                    ]),
+                ]),
                 TextColumn::make('note')
                     ->label('ملاحظة')
                     ->placeholder('—')
-                    ->limit(40)
-                    ->visibleFrom('md'),
+                    ->size('sm')
+                    ->color('gray')
+                    ->limit(60),
             ])
             ->recordActions([
                 Action::make('edit')

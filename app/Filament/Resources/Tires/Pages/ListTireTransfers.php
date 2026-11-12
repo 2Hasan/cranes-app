@@ -184,11 +184,11 @@ class ListTireTransfers extends ListRecords
                     });
                 })
                 ->successNotificationTitle('تم تسجيل الرجوع للمالك'),
-            Action::make('report')
-                ->label('تقرير PDF')
-                ->icon('heroicon-o-document-text')
-                ->url(fn (): string => route('tires.report'), shouldOpenInNewTab: true),
             ActionGroup::make([
+                Action::make('report')
+                    ->label('تقرير PDF')
+                    ->icon('heroicon-o-document-text')
+                    ->url(fn (): string => route('tires.report'), shouldOpenInNewTab: true),
                 Action::make('intakeRecords')
                     ->label('الإضافات')
                     ->url(TireIntakeResource::getUrl()),
@@ -205,8 +205,8 @@ class ListTireTransfers extends ListRecords
                     ->label('المواقع')
                     ->url(SiteResource::getUrl()),
             ])
-                ->label('سجلات وتعديل')
-                ->icon('heroicon-o-queue-list')
+                ->label('المزيد')
+                ->icon('heroicon-o-ellipsis-horizontal-circle')
                 ->button()
                 ->color('gray'),
         ];

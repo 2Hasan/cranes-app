@@ -12,6 +12,8 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\Layout\Split;
+use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
@@ -33,27 +35,39 @@ class TireIntakeResource extends Resource
             ->defaultSort('received_on', 'desc')
             ->paginationPageOptions([10, 25, 50])
             ->columns([
-                TextColumn::make('received_on')
-                    ->label('التاريخ')
-                    ->date('Y-m-d')
-                    ->sortable(),
-                TextColumn::make('site.name')
-                    ->label('الموقع')
-                    ->weight('semibold')
-                    ->searchable(),
-                TextColumn::make('owner.name')
-                    ->label('المالك')
-                    ->color('gray')
-                    ->searchable(),
-                TextColumn::make('quantity')
-                    ->label('العدد')
-                    ->numeric()
-                    ->suffix(' مطاط'),
+                Split::make([
+                    Stack::make([
+                        TextColumn::make('site.name')
+                            ->label('الموقع')
+                            ->weight('semibold')
+                            ->searchable(),
+                        TextColumn::make('owner.name')
+                            ->label('المالك')
+                            ->size('sm')
+                            ->color('gray')
+                            ->searchable(),
+                        TextColumn::make('received_on')
+                            ->label('التاريخ')
+                            ->date('Y-m-d')
+                            ->size('sm')
+                            ->color('gray')
+                            ->sortable(),
+                    ]),
+                    Stack::make([
+                        TextColumn::make('quantity')
+                            ->label('العدد')
+                            ->numeric()
+                            ->suffix(' مطاط')
+                            ->weight('bold')
+                            ->alignEnd(),
+                    ]),
+                ]),
                 TextColumn::make('note')
                     ->label('ملاحظة')
                     ->placeholder('—')
-                    ->limit(40)
-                    ->visibleFrom('md'),
+                    ->size('sm')
+                    ->color('gray')
+                    ->limit(60),
             ])
             ->recordActions([
                 Action::make('edit')

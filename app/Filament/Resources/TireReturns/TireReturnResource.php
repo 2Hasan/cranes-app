@@ -12,6 +12,8 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\Layout\Split;
+use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
@@ -33,30 +35,47 @@ class TireReturnResource extends Resource
             ->defaultSort('returned_at', 'desc')
             ->paginationPageOptions([10, 25, 50])
             ->columns([
-                TextColumn::make('returned_at')
-                    ->label('التاريخ والوقت')
-                    ->dateTime('Y-m-d H:i')
-                    ->sortable(),
-                TextColumn::make('transfer.toSite.name')
-                    ->label('من موقع النقل')
-                    ->weight('semibold')
-                    ->searchable(),
-                TextColumn::make('transfer.fromSite.name')
-                    ->label('إلى الموقع الأصلي')
-                    ->color('gray'),
-                TextColumn::make('transfer.owner.name')
-                    ->label('المالك')
-                    ->color('gray'),
-                TextColumn::make('returned_quantity')
-                    ->label('صالح')
-                    ->numeric(),
-                TextColumn::make('damaged_quantity')
-                    ->label('تالف')
-                    ->numeric()
-                    ->color('danger'),
+                Split::make([
+                    Stack::make([
+                        TextColumn::make('transfer.toSite.name')
+                            ->label('من موقع النقل')
+                            ->weight('semibold')
+                            ->searchable(),
+                        TextColumn::make('transfer.fromSite.name')
+                            ->label('إلى الموقع الأصلي')
+                            ->icon('heroicon-o-arrow-long-left')
+                            ->size('sm')
+                            ->color('gray'),
+                        TextColumn::make('transfer.owner.name')
+                            ->label('المالك')
+                            ->size('sm')
+                            ->color('gray'),
+                        TextColumn::make('returned_at')
+                            ->label('التاريخ والوقت')
+                            ->dateTime('Y-m-d H:i')
+                            ->size('sm')
+                            ->color('gray')
+                            ->sortable(),
+                    ]),
+                    Stack::make([
+                        TextColumn::make('returned_quantity')
+                            ->label('صالح')
+                            ->numeric()
+                            ->suffix(' صالح')
+                            ->weight('bold')
+                            ->alignEnd(),
+                        TextColumn::make('damaged_quantity')
+                            ->label('تالف')
+                            ->numeric()
+                            ->suffix(' تالف')
+                            ->color('danger')
+                            ->alignEnd(),
+                    ])->alignEnd(),
+                ]),
                 TextColumn::make('returned_by')
                     ->label('من رجعها')
-                    ->visibleFrom('md'),
+                    ->size('sm')
+                    ->color('gray'),
             ])
             ->recordActions([
                 Action::make('edit')
