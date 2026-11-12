@@ -16,6 +16,7 @@ use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Support\Exceptions\Halt;
 use Filament\Tables\Columns\Layout\Split;
@@ -229,10 +230,18 @@ class CranesTable
                                 ->minValue(0)
                                 ->required()
                                 ->default(fn (Crane $record): int => $record->current_km),
+                            Toggle::make('allow_below_previous')
+                                ->label('السماح بقراءة أقل من القراءة قبلها')
+                                ->helperText('استخدمه فقط إذا كانت القراءة السابقة نفسها غلط.')
+                                ->default(false),
                         ])
                         ->action(function (Crane $record, array $data): void {
                             try {
-                                app(KmRecorder::class)->correctLatest($record, (int) $data['km']);
+                                app(KmRecorder::class)->correctLatest(
+                                    $record,
+                                    (int) $data['km'],
+                                    (bool) ($data['allow_below_previous'] ?? false),
+                                );
                             } catch (ValidationException $exception) {
                                 Notification::make()
                                     ->title('لم يتم تصحيح القراءة')

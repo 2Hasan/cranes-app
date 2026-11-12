@@ -16,7 +16,7 @@ class KmRecorder
      *
      * @throws ValidationException
      */
-    public function correctLatest(Crane $crane, int $km): KmReading
+    public function correctLatest(Crane $crane, int $km, bool $allowBelowPrevious = false): KmReading
     {
         return DB::transaction(function () use ($crane, $km): KmReading {
             $lockedCrane = Crane::query()->lockForUpdate()->findOrFail($crane->getKey());
@@ -38,7 +38,7 @@ class KmRecorder
                 ->latest('id')
                 ->first();
 
-            if ($previous !== null && $km < $previous->km) {
+            if (! $allowBelowPrevious && $previous !== null && $km < $previous->km) {
                 throw ValidationException::withMessages([
                     'km' => "القراءة ({$km}) أقل من القراءة قبلها ({$previous->km}).",
                 ]);
