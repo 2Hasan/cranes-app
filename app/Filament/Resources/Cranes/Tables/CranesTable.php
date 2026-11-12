@@ -16,6 +16,8 @@ use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Filament\Support\Exceptions\Halt;
 use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
 use Filament\Tables\Columns\TextColumn;
@@ -25,6 +27,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
+use Illuminate\Validation\ValidationException;
 
 class CranesTable
 {
@@ -158,7 +161,19 @@ class CranesTable
                             ->default(fn (Crane $record): int => $record->current_km),
                     ])
                     ->action(function (Crane $record, array $data): void {
-                        app(KmRecorder::class)->record($record, (int) $data['km'], auth()->user());
+                        try {
+                            app(KmRecorder::class)->record($record, (int) $data['km'], auth()->user());
+                        } catch (ValidationException $exception) {
+                            // A refused reading is shown to the user instead of failing silently.
+                            Notification::make()
+                                ->title('لم يتم تسجيل العداد')
+                                ->body(collect($exception->errors())->flatten()->first())
+                                ->danger()
+                                ->persistent()
+                                ->send();
+
+                            throw new Halt;
+                        }
                     })
                     ->successNotificationTitle('تم تسجيل القراءة')
                     ->visible(fn (): bool => auth()->user()?->can('km.record') ?? false),
