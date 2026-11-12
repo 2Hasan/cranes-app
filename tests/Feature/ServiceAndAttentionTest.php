@@ -6,10 +6,12 @@ use App\Enums\MaintenanceType;
 use App\Filament\Resources\Cranes\Pages\ViewCrane;
 use App\Filament\Resources\Cranes\RelationManagers\MaintenanceRecordsRelationManager;
 use App\Models\Crane;
+use App\Models\KmReading;
 use App\Models\MaintenanceRecord;
 use App\Models\Site;
 use App\Models\User;
 use App\Services\CraneAttention;
+use App\Services\KmRecorder;
 use App\Services\ServiceRecorder;
 use App\Services\ServiceSchedule;
 use Database\Seeders\RolePermissionSeeder;
@@ -123,6 +125,22 @@ class ServiceAndAttentionTest extends TestCase
             ->assertHasActionErrors(['km']);
 
         $this->assertSame(0, MaintenanceRecord::query()->count());
+    }
+
+    public function test_a_mistyped_latest_reading_can_be_corrected_but_not_below_the_one_before(): void
+    {
+        $user = User::factory()->create(['is_active' => true]);
+        $crane = $this->crane(['current_km' => 540515]);
+        KmReading::create(['crane_id' => $crane->getKey(), 'recorded_by' => $user->getKey(), 'km' => 530000, 'recorded_at' => now()->subDay()]);
+        KmReading::create(['crane_id' => $crane->getKey(), 'recorded_by' => $user->getKey(), 'km' => 540515, 'recorded_at' => now()]);
+
+        app(KmRecorder::class)->correctLatest($crane, 536945);
+
+        $this->assertSame(536945, $crane->fresh()->current_km);
+
+        $this->expectException(ValidationException::class);
+
+        app(KmRecorder::class)->correctLatest($crane, 520000);
     }
 
     public function test_the_roles_page_renders_for_admins(): void

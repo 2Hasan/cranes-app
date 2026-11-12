@@ -217,6 +217,35 @@ class CranesTable
                     ->successNotificationTitle('تم تسجيل السيرفس')
                     ->visible(fn (): bool => auth()->user()?->can('maintenance.create') ?? false),
                 ActionGroup::make([
+                    Action::make('correctKm')
+                        ->label('تصحيح آخر قراءة')
+                        ->icon('heroicon-o-arrow-path-rounded-square')
+                        ->modalHeading('تصحيح آخر قراءة للعداد')
+                        ->modalDescription('يُستخدم لتصحيح قراءة كُتبت بالخطأ. القراءة المصححة لا يمكن أن تكون أقل من القراءة قبلها.')
+                        ->schema([
+                            TextInput::make('km')
+                                ->label('القراءة الصحيحة (كم)')
+                                ->numeric()
+                                ->minValue(0)
+                                ->required()
+                                ->default(fn (Crane $record): int => $record->current_km),
+                        ])
+                        ->action(function (Crane $record, array $data): void {
+                            try {
+                                app(KmRecorder::class)->correctLatest($record, (int) $data['km']);
+                            } catch (ValidationException $exception) {
+                                Notification::make()
+                                    ->title('لم يتم تصحيح القراءة')
+                                    ->body(collect($exception->errors())->flatten()->first())
+                                    ->danger()
+                                    ->persistent()
+                                    ->send();
+
+                                throw new Halt;
+                            }
+                        })
+                        ->successNotificationTitle('تم تصحيح القراءة')
+                        ->visible(fn (): bool => auth()->user()?->can('crane.manage') ?? false),
                     Action::make('report')
                         ->label('تقرير PDF')
                         ->icon('heroicon-o-document-text')
