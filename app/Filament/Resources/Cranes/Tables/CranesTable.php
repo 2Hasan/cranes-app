@@ -80,10 +80,9 @@ class CranesTable
                         : 'heroicon-o-check-circle')
                     ->color(fn (int $state): string => $state > 0 ? 'danger' : 'gray')
                     ->weight('semibold')
-                    ->url(fn (Crane $record): ?string => $record->open_faults_count > 0
-                        ? CraneResource::getUrl('view', ['record' => $record]).'?relation='
-                            .array_search(FaultsRelationManager::class, CraneResource::getRelations(), true)
-                        : null),
+                    // Always a link, so every card renders the same way and the bars below keep their width.
+                    ->url(fn (Crane $record): string => CraneResource::getUrl('view', ['record' => $record]).'?relation='
+                        .array_search(FaultsRelationManager::class, CraneResource::getRelations(), true)),
                 Stack::make([
                     TextColumn::make('name')
                         ->label('الاسم')
