@@ -158,9 +158,9 @@ class CranesTable
                             ->label('قراءة العداد (كم)')
                             ->numeric()
                             ->minValue(0)
-                            ->required()
-                            ->default(fn (Crane $record): int => $record->current_km),
+                            ->required(),
                     ])
+                    ->fillForm(fn (Crane $record): array => ['km' => $record->current_km])
                     ->action(function (Crane $record, array $data): void {
                         try {
                             app(KmRecorder::class)->record($record, (int) $data['km'], auth()->user());
@@ -184,6 +184,8 @@ class CranesTable
                     ->schema([
                         DatePicker::make('performed_on')
                             ->label('تاريخ السيرفس')
+                            // The browser's own date input re-renders while typing and reverts; this picker does not.
+                            ->native(false)
                             ->default(now())
                             ->required(),
                         TextInput::make('km')
@@ -193,9 +195,9 @@ class CranesTable
                                 : null)
                             ->numeric()
                             ->minValue(0)
-                            ->required()
-                            ->default(fn (Crane $record): int => $record->current_km),
+                            ->required(),
                     ])
+                    ->fillForm(fn (Crane $record): array => ['km' => $record->current_km])
                     ->action(function (Crane $record, array $data): void {
                         try {
                             app(ServiceRecorder::class)->record(
@@ -228,13 +230,13 @@ class CranesTable
                                 ->label('القراءة الصحيحة (كم)')
                                 ->numeric()
                                 ->minValue(0)
-                                ->required()
-                                ->default(fn (Crane $record): int => $record->current_km),
+                                ->required(),
                             Toggle::make('allow_below_previous')
                                 ->label('السماح بقراءة أقل من القراءة قبلها')
                                 ->helperText('استخدمه فقط إذا كانت القراءة السابقة نفسها غلط.')
                                 ->default(false),
                         ])
+                        ->fillForm(fn (Crane $record): array => ['km' => $record->current_km])
                         ->action(function (Crane $record, array $data): void {
                             try {
                                 app(KmRecorder::class)->correctLatest(
