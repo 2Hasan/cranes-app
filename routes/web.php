@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AllCranesReportController;
 use App\Http\Controllers\CranePlateController;
 use App\Http\Controllers\CraneReportController;
 use App\Http\Controllers\PushSubscriptionController;
@@ -11,6 +12,10 @@ Route::get('/', fn () => redirect('/admin'));
 
 // Guests are sent to the Filament login page instead of the default /login route.
 Route::get('/login', fn () => redirect('/admin/login'))->name('login');
+
+Route::get('/cranes/report', AllCranesReportController::class)
+    ->middleware('auth')
+    ->name('cranes.all-report');
 
 Route::get('/cranes/{crane}/report', CraneReportController::class)
     ->middleware('auth')

@@ -8,9 +8,13 @@ use App\Filament\Resources\Cranes\CraneResource;
 use App\Filament\Resources\Cranes\RelationManagers\FaultsRelationManager;
 use App\Models\Crane;
 use App\Models\Site;
+use App\Services\CraneAttention;
 use App\Services\KmRecorder;
+use App\Services\ServiceRecorder;
+use App\Services\ServiceSchedule;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\Layout\Split;
 use Filament\Tables\Columns\Layout\Stack;
@@ -19,6 +23,7 @@ use Filament\Tables\Columns\ViewColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
 
 class CranesTable
@@ -28,10 +33,25 @@ class CranesTable
         return $table
             ->contentGrid(['md' => 2, 'xl' => 3])
             ->paginationPageOptions([12, 24, 48])
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->withCount([
-                'faults as open_faults_count' => fn (Builder $faults) => $faults
-                    ->where('status', '!=', FaultStatus::Resolved->value),
-            ]))
+            ->modifyQueryUsing(function (Builder $query): Builder {
+                $query->withCount([
+                    'faults as open_faults_count' => fn (Builder $faults) => $faults
+                        ->where('status', '!=', FaultStatus::Resolved->value),
+                ]);
+
+                // Cranes needing service or with open faults come first.
+                $ids = app(CraneAttention::class)->sortedIds(auth()->user());
+
+                if ($ids === []) {
+                    return $query;
+                }
+
+                $cases = collect($ids)
+                    ->map(fn (int $id, int $position): string => "WHEN {$id} THEN {$position}")
+                    ->implode(' ');
+
+                return $query->orderByRaw('CASE id '.$cases.' ELSE '.count($ids).' END');
+            })
             ->columns([
                 Split::make([
                     TextColumn::make('code')
@@ -60,7 +80,7 @@ class CranesTable
                     ->color(fn (int $state): string => $state > 0 ? 'danger' : 'gray')
                     ->weight('semibold')
                     ->url(fn (Crane $record): ?string => $record->open_faults_count > 0
-                        ? CraneResource::getUrl('edit', ['record' => $record]).'?relation='
+                        ? CraneResource::getUrl('view', ['record' => $record]).'?relation='
                             .array_search(FaultsRelationManager::class, CraneResource::getRelations(), true)
                         : null),
                 Stack::make([
@@ -102,6 +122,29 @@ class CranesTable
                 SelectFilter::make('status')
                     ->label('الحالة')
                     ->options(CraneStatus::class),
+                SelectFilter::make('service')
+                    ->label('الصيانة')
+                    ->options(['late' => 'متأخرة', 'soon' => 'قريبة'])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $states = ['late' => ServiceSchedule::STATE_LATE, 'soon' => ServiceSchedule::STATE_SOON];
+
+                        if (! isset($states[$data['value'] ?? null])) {
+                            return $query;
+                        }
+
+                        return $query->whereIn('id', app(CraneAttention::class)
+                            ->idsWithServiceState(auth()->user(), $states[$data['value']]));
+                    }),
+                SelectFilter::make('faults')
+                    ->label('الأعطال')
+                    ->options(['open' => 'فيها أعطال غير مصلحة'])
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (($data['value'] ?? null) !== 'open') {
+                            return $query;
+                        }
+
+                        return $query->whereIn('id', app(CraneAttention::class)->idsWithOpenFaults(auth()->user()));
+                    }),
             ])
             ->recordActions([
                 Action::make('recordKm')
@@ -120,6 +163,31 @@ class CranesTable
                     })
                     ->successNotificationTitle('تم تسجيل القراءة')
                     ->visible(fn (): bool => auth()->user()?->can('km.record') ?? false),
+                Action::make('recordService')
+                    ->label('تسجيل سيرفس')
+                    ->icon('heroicon-o-wrench')
+                    ->schema([
+                        DatePicker::make('performed_on')
+                            ->label('تاريخ السيرفس')
+                            ->default(now())
+                            ->required(),
+                        TextInput::make('km')
+                            ->label('العداد عند السيرفس (كم)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->required()
+                            ->default(fn (Crane $record): int => $record->current_km),
+                    ])
+                    ->action(function (Crane $record, array $data): void {
+                        app(ServiceRecorder::class)->record(
+                            $record,
+                            Carbon::parse($data['performed_on']),
+                            (int) $data['km'],
+                            auth()->user(),
+                        );
+                    })
+                    ->successNotificationTitle('تم تسجيل السيرفس')
+                    ->visible(fn (): bool => auth()->user()?->can('maintenance.create') ?? false),
                 Action::make('report')
                     ->label('تقرير PDF')
                     ->icon('heroicon-o-document-text')

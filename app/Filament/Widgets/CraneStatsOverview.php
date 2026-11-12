@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Enums\CraneStatus;
 use App\Enums\FaultSeverity;
 use App\Enums\FaultStatus;
+use App\Filament\Resources\Cranes\CraneResource;
 use App\Models\Crane;
 use App\Models\Fault;
 use App\Services\ServiceSchedule;
@@ -57,15 +58,18 @@ class CraneStatsOverview extends StatsOverviewWidget
             Stat::make('صيانة متأخرة', $late)
                 ->description('تحتاج صيانة فوراً')
                 ->icon('heroicon-o-exclamation-triangle')
-                ->color($late > 0 ? 'danger' : 'success'),
+                ->color($late > 0 ? 'danger' : 'success')
+                ->url(CraneResource::getUrl('index').'?tableFilters[service][value]=late'),
             Stat::make('صيانة قريبة', $soon)
                 ->description('خلال أسبوعين أو 10% من الدورة')
                 ->icon('heroicon-o-clock')
-                ->color($soon > 0 ? 'warning' : 'success'),
+                ->color($soon > 0 ? 'warning' : 'success')
+                ->url(CraneResource::getUrl('index').'?tableFilters[service][value]=soon'),
             Stat::make('أعطال مفتوحة مهمة', $criticalFaults)
                 ->description('عالية أو حرجة ولم تُحل')
                 ->icon('heroicon-o-bolt')
-                ->color($criticalFaults > 0 ? 'danger' : 'success'),
+                ->color($criticalFaults > 0 ? 'danger' : 'success')
+                ->url(CraneResource::getUrl('index').'?tableFilters[faults][value]=open'),
         ];
     }
 

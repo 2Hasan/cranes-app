@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Cranes;
 use App\Filament\Resources\Cranes\Pages\CreateCrane;
 use App\Filament\Resources\Cranes\Pages\EditCrane;
 use App\Filament\Resources\Cranes\Pages\ListCranes;
+use App\Filament\Resources\Cranes\Pages\ViewCrane;
 use App\Filament\Resources\Cranes\RelationManagers\FaultsRelationManager;
 use App\Filament\Resources\Cranes\RelationManagers\MaintenanceRecordsRelationManager;
 use App\Filament\Resources\Cranes\Schemas\CraneForm;
@@ -50,6 +51,7 @@ class CraneResource extends Resource
         return [
             'index' => ListCranes::route('/'),
             'create' => CreateCrane::route('/create'),
+            'view' => ViewCrane::route('/{record}'),
             'edit' => EditCrane::route('/{record}/edit'),
         ];
     }

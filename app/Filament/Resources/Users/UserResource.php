@@ -20,6 +20,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Spatie\Permission\Models\Role;
 
 class UserResource extends Resource
 {
@@ -59,7 +60,11 @@ class UserResource extends Resource
                 ->searchable(),
             Select::make('role')
                 ->label('الدور')
-                ->options(self::ROLE_LABELS)
+                ->options(fn (): array => Role::query()
+                    ->orderBy('name')
+                    ->pluck('name')
+                    ->mapWithKeys(fn (string $name): array => [$name => self::ROLE_LABELS[$name] ?? $name])
+                    ->all())
                 ->required(),
             Toggle::make('is_active')
                 ->label('الحساب فعّال')

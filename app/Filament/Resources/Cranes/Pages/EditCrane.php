@@ -11,6 +11,16 @@ class EditCrane extends EditRecord
 {
     protected static string $resource = CraneResource::class;
 
+    /**
+     * Logs and faults live on the crane's view page; the edit page is only the form.
+     *
+     * @return array<class-string>
+     */
+    public function getRelationManagers(): array
+    {
+        return [];
+    }
+
     protected function mutateFormDataBeforeSave(array $data): array
     {
         // The odometer only changes through KmRecorder, never through the edit form.
