@@ -115,6 +115,8 @@ class MaintenanceRecordsRelationManager extends RelationManager
             ->headerActions([
                 CreateAction::make()
                     ->label('تسجيل صيانة')
+                    ->modalHeading('تسجيل صيانة')
+                    ->modalSubmitActionLabel('حفظ')
                     ->visible(fn (): bool => auth()->user()?->can('maintenance.create') ?? false)
                     ->mutateDataUsing(fn (array $data): array => $data + ['created_by' => auth()->id()])
                     ->after(function (MaintenanceRecord $record): void {
@@ -128,6 +130,8 @@ class MaintenanceRecordsRelationManager extends RelationManager
             ])
             ->recordActions([
                 EditAction::make()
+                    ->modalHeading('تعديل السجل')
+                    ->modalSubmitActionLabel('حفظ')
                     ->visible(fn (): bool => auth()->user()?->can('maintenance.create') ?? false),
             ]);
     }

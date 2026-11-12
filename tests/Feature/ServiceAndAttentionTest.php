@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Enums\MaintenanceType;
+use App\Filament\Resources\Cranes\Pages\ViewCrane;
+use App\Filament\Resources\Cranes\RelationManagers\MaintenanceRecordsRelationManager;
 use App\Models\Crane;
 use App\Models\MaintenanceRecord;
 use App\Models\Site;
@@ -13,6 +16,7 @@ use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class ServiceAndAttentionTest extends TestCase
@@ -96,6 +100,29 @@ class ServiceAndAttentionTest extends TestCase
 
         $this->actingAs($user)->get(route('filament.admin.resources.cranes.view', $crane))->assertOk();
         $this->actingAs($user)->get(route('filament.admin.resources.cranes.index'))->assertOk();
+    }
+
+    public function test_a_maintenance_reading_below_the_odometer_is_refused(): void
+    {
+        $this->seed(RolePermissionSeeder::class);
+        $user = User::factory()->create(['is_active' => true]);
+        $user->assignRole('admin');
+        $crane = $this->crane(['current_km' => 1000, 'service_interval_km' => 5000, 'last_service_km' => 0]);
+
+        Livewire::actingAs($user)
+            ->test(MaintenanceRecordsRelationManager::class, [
+                'ownerRecord' => $crane,
+                'pageClass' => ViewCrane::class,
+            ])
+            ->callTableAction('create', data: [
+                'type' => MaintenanceType::Periodic->value,
+                'performed_on' => now()->toDateString(),
+                'km' => 500,
+                'description' => 'تجربة',
+            ])
+            ->assertHasActionErrors(['km']);
+
+        $this->assertSame(0, MaintenanceRecord::query()->count());
     }
 
     public function test_the_roles_page_renders_for_admins(): void
