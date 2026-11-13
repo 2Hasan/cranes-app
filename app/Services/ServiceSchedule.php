@@ -54,9 +54,10 @@ class ServiceSchedule
                 default => self::STATE_OK,
             };
 
-            if ($lastDate !== null) {
-                $start = Carbon::parse($lastDate)->startOfDay();
-                $dateProgress = $this->progress($start->diffInDays($today), $start->diffInDays($nextDate));
+            if ($crane->service_interval_days) {
+                // The cycle started one interval before the due date; progress is how far today is into it.
+                $cycleStart = $nextDate->copy()->subDays($crane->service_interval_days);
+                $dateProgress = $this->progress((int) $cycleStart->diffInDays($today, false), $crane->service_interval_days);
             }
         }
 
@@ -72,8 +73,9 @@ class ServiceSchedule
                 default => self::STATE_OK,
             };
 
-            if ($lastKm !== null) {
-                $kmProgress = $this->progress($crane->current_km - $lastKm, $nextKm - $lastKm);
+            if ($crane->service_interval_km) {
+                // The cycle started one interval before the due meter.
+                $kmProgress = $this->progress($crane->current_km - ($nextKm - $crane->service_interval_km), $crane->service_interval_km);
             }
         }
 
@@ -158,7 +160,7 @@ class ServiceSchedule
     private function progress(int $used, int $span): float
     {
         if ($span <= 0) {
-            return 1.0;
+            return 0.0;
         }
 
         return max(0, min(1, $used / $span));

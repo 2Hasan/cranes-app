@@ -110,7 +110,8 @@ class CranesTable
                         ->sortable(),
                     TextColumn::make('current_km')
                         ->label('العداد')
-                        ->numeric()
+                        // Latin digits: the default numeric format localises to Arabic-Indic digits here.
+                        ->formatStateUsing(fn (?int $state): ?string => $state === null ? null : number_format($state))
                         ->suffix(' كم')
                         ->color('gray')
                         ->size('sm')
