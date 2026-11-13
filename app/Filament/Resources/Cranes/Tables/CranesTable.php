@@ -182,32 +182,29 @@ class CranesTable
                     ->label('تسجيل سيرفس')
                     ->icon('heroicon-o-wrench')
                     ->schema([
-                        DatePicker::make('performed_on')
-                            ->label('تاريخ السيرفس')
+                        DatePicker::make('next_service_date')
+                            ->label('موعد الصيانة القادمة (التاريخ)')
                             // The browser's own date input re-renders while typing and reverts; this picker does not.
                             ->native(false)
-                            ->default(now())
                             ->required(),
-                        TextInput::make('km')
-                            ->label('العداد عند السيرفس (كم)')
-                            ->helperText(fn (Crane $record): ?string => $record->service_interval_km
-                                ? 'تُخصم منه الدورة ('.number_format($record->service_interval_km).' كم) ويُسجل السيرفس على الناتج. مثال: 10,000 مع دورة 5,000 = سيرفس عند 5,000.'
-                                : null)
+                        TextInput::make('next_service_km')
+                            ->label('موعد الصيانة القادمة (العداد كم)')
+                            ->helperText('إذا وصل عداد الرافعة لهذا الرقم تحتاج صيانة، حتى لو ما وصل التاريخ.')
                             ->numeric()
                             ->minValue(0)
                             ->required(),
                     ])
-                    // fillForm replaces the whole form state, so the date default must be set here too.
+                    // fillForm replaces the whole form state, so every default is set here.
                     ->fillForm(fn (Crane $record): array => [
-                        'performed_on' => now()->toDateString(),
-                        'km' => $record->current_km,
+                        'next_service_date' => now()->addDays($record->service_interval_days ?? 0)->toDateString(),
+                        'next_service_km' => $record->current_km + ($record->service_interval_km ?? 0),
                     ])
                     ->action(function (Crane $record, array $data): void {
                         try {
                             app(ServiceRecorder::class)->record(
                                 $record,
-                                Carbon::parse($data['performed_on']),
-                                (int) $data['km'],
+                                Carbon::parse($data['next_service_date']),
+                                (int) $data['next_service_km'],
                                 auth()->user(),
                             );
                         } catch (ValidationException $exception) {

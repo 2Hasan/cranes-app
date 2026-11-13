@@ -7,6 +7,7 @@ use App\Enums\RepairResult;
 use App\Models\MaintenanceRecord;
 use App\Services\KmRecorder;
 use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -132,6 +133,12 @@ class MaintenanceRecordsRelationManager extends RelationManager
                 EditAction::make()
                     ->modalHeading('تعديل السجل')
                     ->modalSubmitActionLabel('حفظ')
+                    ->visible(fn (): bool => auth()->user()?->can('maintenance.create') ?? false),
+                DeleteAction::make()
+                    ->label('حذف')
+                    ->modalHeading('حذف السجل')
+                    ->modalDescription('سيتم حذف هذا السجل من سجل الصيانة.')
+                    ->successNotificationTitle('تم حذف السجل')
                     ->visible(fn (): bool => auth()->user()?->can('maintenance.create') ?? false),
             ]);
     }

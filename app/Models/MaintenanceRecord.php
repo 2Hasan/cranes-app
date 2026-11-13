@@ -27,6 +27,8 @@ class MaintenanceRecord extends Model
         'repair_result',
         'performed_on',
         'km',
+        'next_service_date',
+        'next_service_km',
         'description',
     ];
 
@@ -38,6 +40,8 @@ class MaintenanceRecord extends Model
             'repair_result' => RepairResult::class,
             'performed_on' => 'date',
             'km' => 'integer',
+            'next_service_date' => 'date',
+            'next_service_km' => 'integer',
         ];
     }
 
