@@ -4,12 +4,16 @@ namespace App\Filament\Resources\Cranes\RelationManagers;
 
 use App\Enums\FaultSeverity;
 use App\Enums\FaultStatus;
+use App\Enums\MaintenanceType;
+use App\Enums\RepairResult;
 use App\Models\Fault;
 use App\Models\User;
+use App\Services\KmRecorder;
 use App\Services\MaintenanceAlerts;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -124,6 +128,7 @@ class FaultsRelationManager extends RelationManager
                     ->schema([
                         Select::make('maintenance_record_id')
                             ->label('سجل الصيانة الذي أصلحه')
+                            ->helperText('إذا ما فيه سجل للإصلاح، اضغط "إنشاء" وسجله هنا مباشرة.')
                             ->options(fn (): array => $this->getOwnerRecord()
                                 ->maintenanceRecords()
                                 ->latest('performed_on')
@@ -134,7 +139,46 @@ class FaultsRelationManager extends RelationManager
                                 ])
                                 ->all())
                             ->searchable()
-                            ->required(),
+                            ->required()
+                            ->createOptionForm([
+                                DatePicker::make('performed_on')
+                                    ->label('التاريخ')
+                                    ->default(now())
+                                    ->required(),
+                                Select::make('type')
+                                    ->label('نوع الصيانة')
+                                    ->options(MaintenanceType::class)
+                                    ->default(MaintenanceType::Repair)
+                                    ->required(),
+                                Select::make('repair_result')
+                                    ->label('نتيجة الإصلاح')
+                                    ->options(RepairResult::class)
+                                    ->default(RepairResult::Fixed),
+                                TextInput::make('km')
+                                    ->label('قراءة العداد (كم)')
+                                    ->numeric()
+                                    ->minValue(fn (): int => $this->getOwnerRecord()->current_km)
+                                    ->default(fn (): int => $this->getOwnerRecord()->current_km),
+                                TextInput::make('technician_name')
+                                    ->label('الفني')
+                                    ->maxLength(120),
+                                Textarea::make('description')
+                                    ->label('ما الذي تم')
+                                    ->required(),
+                            ])
+                            ->createOptionUsing(function (array $data): int {
+                                $crane = $this->getOwnerRecord();
+
+                                $maintenanceRecord = $crane->maintenanceRecords()->create($data + [
+                                    'created_by' => auth()->id(),
+                                ]);
+
+                                if ($maintenanceRecord->km !== null && $maintenanceRecord->km > $crane->current_km) {
+                                    app(KmRecorder::class)->record($crane, $maintenanceRecord->km, auth()->user());
+                                }
+
+                                return $maintenanceRecord->getKey();
+                            }),
                     ])
                     ->action(function (Fault $record, array $data): void {
                         $record->update([
