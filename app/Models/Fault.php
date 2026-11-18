@@ -21,6 +21,7 @@ class Fault extends Model
         'crane_id',
         'title',
         'description',
+        'repair_note',
         'severity',
         'status',
         'reported_by',
