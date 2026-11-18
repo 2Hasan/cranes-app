@@ -170,6 +170,9 @@
                         <td colspan="5" class="description">
                             @if ($fault->resolved_at)
                                 <strong>أُغلق بتاريخ:</strong> {{ $fault->resolved_at->format('Y-m-d H:i') }}
+                                @if ($fault->repair_note)
+                                    — <strong>الإصلاح:</strong> {{ $fault->repair_note }}
+                                @endif
                                 @if ($fault->maintenanceRecord)
                                     — <strong>الإصلاح:</strong> {{ $fault->maintenanceRecord->type->getLabel() }} بتاريخ {{ $fault->maintenanceRecord->performed_on->format('Y-m-d') }}: {{ $fault->maintenanceRecord->description }}
                                 @endif
